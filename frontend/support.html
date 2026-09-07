@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Care Dashboard</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <style>
+        :root {
+            --ups-brown: #330000;
+            --ups-yellow: #FFB500;
+            --ups-gold: #D4A017;
+            --ups-blue: #008298;
+            --bg-light: #f4f4f4;
+        }
+        body { font-family: 'Roboto', sans-serif; background-color: var(--bg-light); color: #121212; height: 100vh; overflow: hidden; }
+        
+        .top-navbar { height: 60px; background: var(--ups-brown); color: white; display: flex; align-items: center; padding: 0 20px; justify-content: space-between; }
+        
+        .workspace { display: flex; height: calc(100vh - 60px); }
+        
+        /* LEFT PANE */
+        .pane-left { width: 350px; background: white; border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; }
+        .queue-search { padding: 15px; border-bottom: 1px solid #e0e0e0; background: #fafafa; }
+        .ticket-list { flex-grow: 1; overflow-y: auto; }
+        .ticket-item { padding: 15px; border-bottom: 1px solid #f0f0f0; cursor: pointer; transition: background 0.2s; }
+        .ticket-item:hover { background: #f8f9fa; }
+        .ticket-item.active { background: #fff8e1; border-left: 4px solid var(--ups-yellow); }
+        
+        /* CENTER PANE */
+        .pane-center { flex-grow: 1; display: flex; flex-direction: column; background: #fff; }
+        .thread-header { padding: 20px; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+        .thread-messages { flex-grow: 1; overflow-y: auto; padding: 20px; background: var(--bg-light); }
+        .thread-reply { padding: 20px; border-top: 1px solid #e0e0e0; background: white; }
+        
+        /* RIGHT PANE */
+        .pane-right { width: 350px; background: white; border-left: 1px solid #e0e0e0; overflow-y: auto; }
+        .profile-section { padding: 20px; border-bottom: 1px solid #e0e0e0; }
+        
+        .bubble { padding: 12px 16px; border-radius: 12px; margin-bottom: 15px; max-width: 85%; }
+        .bubble-customer { background: white; border: 1px solid #e0e0e0; margin-right: auto; }
+        .bubble-admin { background: #fff8e1; border: 1px solid var(--ups-yellow); margin-left: auto; }
+        .bubble-internal { background: #fff3cd; border: 1px solid #ffe69c; margin-left: auto; color: #856404; }
+        
+        /* STATS RIBBON */
+        .stats-ribbon { display: flex; background: #fff; border-bottom: 1px solid #e0e0e0; padding: 10px 20px; gap: 30px; }
+        .stat-item { display: flex; align-items: center; gap: 10px; }
+        .stat-value { font-size: 1.25rem; font-weight: bold; color: var(--ups-brown); }
+        .stat-label { font-size: 0.85rem; color: #666; text-transform: uppercase; font-weight: 500; }
+        
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 768px) {
+            body { overflow: auto; }
+            .workspace { flex-direction: column; height: auto; }
+            .pane-left, .pane-center, .pane-right { width: 100%; min-height: 60vh; border-right: none; border-bottom: 2px solid var(--ups-brown); }
+            .pane-right { border-left: none; }
+            .stats-ribbon { flex-wrap: wrap; gap: 15px; }
+            .top-navbar { padding: 10px; height: auto; flex-direction: column; gap: 10px; text-align: center; }
+            .thread-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="top-navbar">
+        <div class="d-flex align-items-center gap-2 fw-bold fs-5">
+            <span class="material-symbols-rounded text-warning">support_agent</span>
+            Customer Care Dashboard
+        </div>
+        <div class="d-flex gap-3">
+            <a href="admin.html" class="btn btn-sm btn-outline-light rounded-0">Back to Operations</a>
+            <button onclick="logout()" class="btn btn-sm btn-danger rounded-0">Logout</button>
+        </div>
+    </nav>
+    
+    <div class="stats-ribbon">
+        <div class="stat-item">
+            <div class="stat-value" id="stat-total">0</div>
+            <div class="stat-label">Total Tickets</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value text-warning" id="stat-pending">0</div>
+            <div class="stat-label">Pending Requests</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value text-primary" id="stat-active">0</div>
+            <div class="stat-label">Active Conversations</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-value text-success" id="stat-resolved">0</div>
+            <div class="stat-label">Resolved Issues</div>
+        </div>
+    </div>
+
+    <div class="workspace">
+        
+        <!-- LEFT PANE: QUEUE -->
+        <div class="pane-left">
+            <div class="queue-search">
+                <div class="input-group mb-2">
+                    <span class="input-group-text bg-white border-end-0"><span class="material-symbols-rounded fs-5 text-muted">search</span></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="search-input" placeholder="Search tracking, email, phone..." onkeyup="renderQueue()">
+                </div>
+                <select class="form-select form-select-sm" id="status-filter" onchange="renderQueue()">
+                    <option value="all">All Statuses</option>
+                    <option value="open">Open</option>
+                    <option value="pending">Pending</option>
+                    <option value="resolved">Resolved</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+            <div class="ticket-list" id="ticket-list">
+                <div class="p-4 text-center text-muted">Loading queue...</div>
+            </div>
+        </div>
+        
+        <!-- CENTER PANE: THREAD -->
+        <div class="pane-center" id="empty-state">
+            <div class="d-flex flex-column align-items-center justify-content-center h-100 text-muted">
+                <span class="material-symbols-rounded" style="font-size: 5rem; opacity: 0.2">forum</span>
+                <h4 class="mt-3">Select a ticket to view conversation</h4>
+            </div>
+        </div>
+        
+        <div class="pane-center d-none" id="active-thread">
+            <div class="thread-header">
+                <div>
+                    <h4 class="fw-bold mb-1" id="thread-subject">Issue Subject</h4>
+                    <div class="d-flex gap-3 text-muted small">
+                        <span><strong class="text-dark">Category:</strong> <span id="thread-category">General</span></span>
+                        <span><strong class="text-dark">Agent:</strong> <span id="thread-agent">Unassigned</span></span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="assignToMe()">Assign to Me</button>
+                    <select class="form-select form-select-sm fw-bold" id="thread-status" style="width: 130px;" onchange="updateTicketStatus(this.value)">
+                        <option value="open">Open</option>
+                        <option value="pending">Pending</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="thread-messages" id="thread-messages">
+                <!-- Messages -->
+            </div>
+            
+            <div class="thread-reply">
+                <form onsubmit="sendReply(event)">
+                    <div class="d-flex justify-content-between mb-2">
+                        <div class="btn-group" role="group">
+                            <input type="radio" class="btn-check" name="replyType" id="replyPublic" value="admin" checked>
+                            <label class="btn btn-outline-secondary btn-sm rounded-0" for="replyPublic">Public Reply</label>
+                            
+                            <input type="radio" class="btn-check" name="replyType" id="replyInternal" value="internal">
+                            <label class="btn btn-outline-warning btn-sm rounded-0 text-dark" for="replyInternal">Internal Note</label>
+                        </div>
+                    </div>
+                    <textarea class="form-control rounded-0 mb-2" id="reply-input" rows="3" placeholder="Type your message here..." required></textarea>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <input type="file" class="form-control form-control-sm rounded-0" id="reply-image" accept="image/*" style="max-width: 250px;">
+                        <button type="submit" class="btn btn-ups fw-bold px-4 rounded-0" id="btn-send">Send Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- RIGHT PANE: CONTEXT -->
+        <div class="pane-right">
+            <div id="context-empty" class="p-4 text-center text-muted">
+                No customer selected.
+            </div>
+            <div id="context-profile" class="d-none">
+                <!-- Profile Section -->
+                <div class="profile-section bg-light">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: var(--ups-brown); color: white; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold;" id="ctx-initial">C</div>
+                        <div>
+                            <h5 class="fw-bold mb-0" id="ctx-name">Customer Name</h5>
+                            <span class="badge bg-secondary">Receiver</span>
+                        </div>
+                    </div>
+                    <div class="small mb-1"><span class="material-symbols-rounded align-middle me-2 fs-6">mail</span><span id="ctx-email">email@example.com</span></div>
+                    <div class="small mb-1"><span class="material-symbols-rounded align-middle me-2 fs-6">phone</span><span id="ctx-phone">Not provided</span></div>
+                    <div class="small"><span class="material-symbols-rounded align-middle me-2 fs-6">location_on</span><span id="ctx-address">Address</span></div>
+                </div>
+                
+                <!-- Shipment Section -->
+                <div class="profile-section">
+                    <h6 class="fw-bold text-uppercase text-muted mb-3 d-flex justify-content-between align-items-center">
+                        Shipment Context
+                        <a href="#" class="text-primary small text-decoration-none" id="ctx-track-link" target="_blank">Track</a>
+                    </h6>
+                    <div class="mb-2"><strong class="small">Tracking:</strong> <span class="fw-bold text-ups-brown" id="ctx-tracking">TRK-XXX</span></div>
+                    <div class="mb-2"><strong class="small">Status:</strong> <span class="badge bg-info text-dark" id="ctx-ship-status">In Transit</span></div>
+                    <div class="mb-2"><strong class="small">Origin:</strong> <span id="ctx-origin">City, Country</span></div>
+                </div>
+                
+                <!-- Payment Section -->
+                <div class="profile-section">
+                    <h6 class="fw-bold text-uppercase text-muted mb-3">Payment History</h6>
+                    <div class="mb-2"><strong class="small">Status:</strong> <span class="badge bg-secondary" id="ctx-pay-status">Unpaid</span></div>
+                    <div class="mb-2"><strong class="small">Amount:</strong> <span class="fw-bold" id="ctx-pay-amount">$0.00</span></div>
+                    <div id="ctx-receipt-container" class="mt-3 d-none">
+                        <a href="#" id="ctx-receipt-btn" class="btn btn-sm btn-outline-ups w-100 rounded-0" target="_blank"><span class="material-symbols-rounded align-middle me-1" style="font-size:1rem;">receipt</span> View Receipt</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-overlay" style="position:fixed; top:0; left:0; right:0; bottom:0; background:var(--bg-light); z-index:9999; display:flex; align-items:center; justify-content:center;">
+        <div style="background:white; padding:40px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.1); width:100%; max-width:400px; text-align:center;">
+            <span class="material-symbols-rounded d-block mb-3" style="font-size:3.5rem; color:var(--ups-brown)">support_agent</span>
+            <h3 class="fw-bold mb-4">Support Login</h3>
+            
+            <div class="alert alert-danger d-none" id="login-error"></div>
+            
+            <form id="login-form">
+                <div class="mb-3 text-start"><label class="fw-bold mb-1 small text-muted">Email</label><input type="email" class="form-control rounded-0" id="email" required></div>
+                <div class="mb-4 text-start"><label class="fw-bold mb-1 small text-muted">Password</label><input type="password" class="form-control rounded-0" id="password" required></div>
+                <button type="submit" id="submit-auth-btn" class="btn fw-bold rounded-0 w-100" style="background:var(--ups-brown); color:white;">Sign In</button>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="support.js"></script>
+</body>
+</html>

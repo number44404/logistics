@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "454880559851",
+    "project_id": "upstest-staff",
+    "storage_bucket": "upstest-staff.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:454880559851:android:3f94772f641c9754d674ae",
+        "android_client_info": {
+          "package_name": "com.upstest.staff"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyArY4DMs2V4oANQUXJCxczo3i7KWZSUNZk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

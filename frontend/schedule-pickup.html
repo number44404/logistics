@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule a Pickup | UPS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-light text-dark">
+
+    <!-- Yellow Top Banner -->
+    <div class="bg-warning text-dark text-center py-1 d-flex justify-content-center align-items-center gap-2" style="font-size: 16px; font-weight: 500; height: 40px;">
+        <svg class="icon-small" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <span>IEEPA Tariff Refunds</span>
+        <svg class="icon-small tooltip-icon" viewBox="0 0 24 24" fill="none" stroke="#0662bb" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </div>
+
+    <!-- Sticky Header Wrapper -->
+    <div class="sticky-top bg-white border-bottom shadow-sm" style="top: -40px; transition: box-shadow, position 350ms ease-in-out; z-index: 1030;">
+        <div class="bg-light border-bottom" style="font-size: 12px;">
+            <div class="container-xxl px-3 px-xl-4 d-flex justify-content-between align-items-center" style="height: 40px; max-width: 1392px;">
+                <div class="d-flex align-items-center gap-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-medium"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <a href="#" class="text-dark fw-semibold text-decoration-underline text-decoration-underline-hover">Find Closest UPS Location</a>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+                <div class="d-flex align-items-center gap-4">
+                    <div class="d-flex align-items-center gap-1 d-md-none">
+                        <div class="position-relative d-flex align-items-center">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" class="icon-medium"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span class="position-absolute translate-middle badge rounded-pill bg-danger" style="top: 0px; right: -12px; font-size: 10px; width: 14px; height: 14px; display: flex; justify-content: center; align-items: center; padding: 0;">1</span>
+                        </div>
+                    </div>
+                    <div class="d-none d-md-flex align-items-center gap-1">
+                        <div class="position-relative d-flex align-items-center me-1">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" class="icon-medium"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            <span class="position-absolute translate-middle badge rounded-pill bg-danger" style="top: 0px; right: -12px; font-size: 10px; width: 14px; height: 14px; display: flex; justify-content: center; align-items: center; padding: 0;">1</span>
+                        </div>
+                        <a href="#" class="text-dark text-decoration-none text-decoration-underline-hover">Service Alerts</a>
+                    </div>
+                    <div class="d-none d-md-flex align-items-center gap-1">
+                        <a href="#" class="text-dark text-decoration-none text-decoration-underline-hover">United States - English</a>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="d-none d-md-flex align-items-center gap-1">
+                        <a href="#" class="text-dark text-decoration-none text-decoration-underline-hover">Support</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Header -->
+        <header class="bg-white">
+            <div class="container-xxl px-3 px-xl-4 d-flex justify-content-between align-items-center" style="height: 76px; max-width: 1392px;">
+                <div class="d-flex align-items-center gap-4">
+                    <a href="#" class="d-block">
+                        <img src="img/ups-logo.svg" alt="UPS Home" height="58">
+                    </a>
+                    <nav class="d-none d-md-block">
+                        <ul class="d-flex list-unstyled m-0 gap-4" style="height: 76px;">
+                            <li class="d-flex align-items-center"><a href="#" class="text-dark fw-semibold text-decoration-none text-decoration-underline-hover py-2" style="font-size: 14px;">Shipping</a></li>
+                            <li class="d-flex align-items-center"><a href="#" class="text-dark fw-semibold text-decoration-none text-decoration-underline-hover py-2" style="font-size: 14px;">Tracking</a></li>
+                            <li class="d-flex align-items-center"><a href="#" class="text-dark fw-semibold text-decoration-none text-decoration-underline-hover py-2" style="font-size: 14px;">Products & Services</a></li>
+                            <li class="d-flex align-items-center"><a href="#" class="text-dark fw-semibold text-decoration-none text-decoration-underline-hover py-2" style="font-size: 14px;">The UPS Store</a></li>
+                        </ul>
+                    </nav>
+                </div>
+                <div class="d-flex align-items-center gap-3 gap-md-4">
+                    <button class="btn btn-link p-0 text-dark d-flex align-items-center">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="2.5" class="icon-medium"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    </button>
+                    <button class="btn btn-warning rounded-pill fw-bold text-dark d-none d-md-flex align-items-center px-3" style="height: 40px; font-size: 14px;">
+                        Log In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small ms-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                    <button class="btn btn-warning rounded-circle p-0 d-md-none d-flex justify-content-center align-items-center" style="width: 40px; height: 40px;">
+                        <svg viewBox="0 0 24 24" fill="#121212" stroke="none" class="icon-medium"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2z"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </button>
+                    <button class="btn p-0 d-md-none d-flex align-items-center justify-content-center hamburger-btn" style="width: 40px; height: 40px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2.5" class="icon-medium hamburger-icon"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" class="icon-medium close-icon d-none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Mobile Navigation Drawer Overlay-->
+        <div class="position-absolute start-0 w-100 d-md-none bg-dark" id="mobileNavOverlay" style="top: 100%; height: 100vh; opacity: 0; visibility: hidden; z-index: 1010; transition: opacity 0.3s ease;"></div>
+        
+        <!-- Mobile Navigation Drawer -->
+        <div class="position-absolute bg-white d-md-none d-flex flex-column shadow" id="mobileNavDrawer" style="top: 100%; right: -100%; width: 85%; max-width: 350px; height: calc(100vh - 76px); padding-bottom: 80px; z-index: 1020; transition: right 0.3s ease; overflow-y: auto;">
+            <ul class="list-unstyled d-flex flex-column m-0">
+                <li class="drawer-accordion-section">
+                    <div class="d-flex justify-content-between align-items-center px-4 py-3 drawer-accordion-header" style="cursor: pointer;">
+                        <span class="drawer-accordion-title" style="font-size: 16px; font-weight: 600; color: #121212; transition: color 0.2s;">Shipping</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="icon-small drawer-accordion-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="drawer-accordion-content" style="display: none;">
+                        <div class="bg-warning ms-4 me-3 mb-4" style="height: 3px;"></div>
+                        
+                        <h4 class="text-uppercase ms-4 mb-2" style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #121212;">Shipping Tools</h4>
+                        <div class="bg-warning ms-4 mb-3" style="height: 3px; width: 40px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="create-shipment.html" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Create a Shipment</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="calculate-cost.html" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Calculate Shipping Cost</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="schedule-pickup.html" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Schedule a Pickup</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">View Shipping History</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Order Supplies</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Shipping Tools</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Find the Right Tool for Your Needs</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+
+                        <h4 class="text-uppercase ms-4 mb-2" style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #121212;">Shipping Services</h4>
+                        <div class="bg-warning ms-4 mb-3" style="height: 3px; width: 40px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Discounted Shipping Rates</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Sign Up and Save Up to 83%</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Batch File Shipping</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Ship Up to 250 Packages at Once</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Connect & Manage Your Online Store</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">International Shipping Services</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Shipping Services</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+
+                        <h4 class="text-uppercase ms-4 mb-2" style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #121212;">Shipping Guides</h4>
+                        <div class="bg-warning ms-4 mb-3" style="height: 3px; width: 40px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">How To Ship a Package</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">How To Return a Package</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">How To Void a UPS Shipment</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Tariffs Guide and Updates</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">International Shipping Guides</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Resources to Help You Ship Globally</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Shipping Guides and Resources</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Explore Helpful How-To Guides</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="border-bottom border-secondary-subtle mx-4"></li>
+                <li class="drawer-accordion-section">
+                    <div class="d-flex justify-content-between align-items-center px-4 py-3 drawer-accordion-header" style="cursor: pointer;">
+                        <span class="drawer-accordion-title" style="font-size: 16px; font-weight: 600; color: #121212; transition: color 0.2s;">Tracking</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="icon-small drawer-accordion-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="drawer-accordion-content" style="display: none;">
+                        <div class="bg-warning ms-4 me-3 mb-2" style="height: 3px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Track a Package</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Change a Delivery</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Go to Tracking Support</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">View Your Home Deliveries</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">UPS My Choice&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Manage Business Shipments</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">UPS My Choice&reg; for Business</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Shipments for Large Businesses</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Quantum View&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="border-bottom border-secondary-subtle mx-4"></li>
+                <li class="drawer-accordion-section">
+                    <div class="d-flex justify-content-between align-items-center px-4 py-3 drawer-accordion-header" style="cursor: pointer;">
+                        <span class="drawer-accordion-title" style="font-size: 16px; font-weight: 600; color: #121212; transition: color 0.2s;">Products & Services</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="icon-small drawer-accordion-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="drawer-accordion-content" style="display: none;">
+                        <div class="bg-warning ms-4 me-3 mb-4" style="height: 3px;"></div>
+                        
+                        <h4 class="text-uppercase ms-4 mb-2" style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #121212;">Business Solutions</h4>
+                        <div class="bg-warning ms-4 mb-3" style="height: 3px; width: 40px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Industry-Based Solutions</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Customized Logistics and Shipping Services</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Small Business Solutions</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Shipping Services</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Pickup and Drop-off Options</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Simplify Returns</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">View Consulting Services</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+
+                        <h4 class="text-uppercase ms-4 mb-2" style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #121212;">Tools</h4>
+                        <div class="bg-warning ms-4 mb-3" style="height: 3px; width: 40px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Pay Bill</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">File a Claim</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">View and Control Your Shipments</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">UPS My Choice&reg; for Business</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Manage Shipments for Large Enterprises</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Quantum View&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+
+                        <h4 class="text-uppercase ms-4 mb-2" style="font-size: 14px; font-weight: 700; letter-spacing: 1.5px; color: #121212;">Logistics Services</h4>
+                        <div class="bg-warning ms-4 mb-3" style="height: 3px; width: 40px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Healthcare Logistics</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">UPS Healthcare&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Freight Forwarding & Global Logistics</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">UPS Supply Chain Solutions&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Same-Day Shipping</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Roadie</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">E-Commerce Returns Management</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Happy Returns</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">Shipping Protection & Risk Mitigation</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">InsureShield&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">High Value Shipping Insurance</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Parcel Pro&reg;</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="border-bottom border-secondary-subtle mx-4"></li>
+                <li class="drawer-accordion-section">
+                    <div class="d-flex justify-content-between align-items-center px-4 py-3 drawer-accordion-header" style="cursor: pointer;">
+                        <span class="drawer-accordion-title" style="font-size: 16px; font-weight: 600; color: #121212; transition: color 0.2s;">The UPS Store</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="icon-small drawer-accordion-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <div class="drawer-accordion-content" style="display: none;">
+                        <div class="bg-warning ms-4 me-3 mb-2" style="height: 3px;"></div>
+                        <ul class="list-unstyled m-0 mb-4 pb-2">
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Pack and Ship</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Printing Solutions</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-start text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <div>
+                                    <span class="d-block text-dark">In-Store Services</span>
+                                    <span class="d-block fst-italic mt-1" style="font-size: 15px; font-weight: 400;">Notary, Passport and Supplies</span>
+                                </div>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small mt-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">Open a Mailbox</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                            <li><a href="#" class="d-flex justify-content-between align-items-center text-decoration-none px-4 py-3" style="color: #4a4a4a; font-weight: 500; font-size: 16px;">
+                                <span class="text-dark">View All Services</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="icon-small"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="border-bottom border-secondary-subtle mx-4 mb-4"></li>
+                
+                <li><a href="#" class="fw-normal text-decoration-none px-4 py-2 d-block" style="font-size: 16px; color: #121212;">Support</a></li>
+                <li><a href="#" class="fw-normal text-decoration-none px-4 py-2 d-block" style="font-size: 16px; color: #121212;">United States - English</a></li>
+            </ul>
+        </div>
+    </div>
+
+        <main style="background-color: #f4f3f0; padding-bottom: 60px;">
+        <!-- Top Curve Background -->
+        <div style="background-image: radial-gradient(150% 100% at 50% 0%, #ffffff 0%, #f4f3f0 30%); pt-4">
+            <div class="container-fluid px-3 pt-5 text-center" style="max-width: 500px; margin: 0 auto;">
+                <h1 class="text-start" style="font-size: 28px; font-weight: 300; color: #4a4a4a; margin-bottom: 16px;">Schedule a One-Time Pickup</h1>
+                <div class="text-start" style="background-color: #ffb500; height: 3px; width: 40px; margin: 0 0 24px 0;"></div>
+                
+                <p class="text-center text-md-start" style="font-size: 16px; color: #121212; line-height: 1.5; margin-bottom: 24px;">
+                    Request an on-demand pickup for your UPS ground, air, and international shipments.
+                </p>
+                
+                <style>
+                    .top-btn {
+                        background-color: #ffb500; color: #121212; height: 50px; border-radius: 25px; font-size: 16px; font-weight: 700; width: 100%; margin-bottom: 16px;
+                    }
+                    @media (min-width: 768px) {
+                        .top-btn { width: auto; padding: 0 32px; margin-bottom: 0; }
+                    }
+                                .pickup-card {
+                    background-color: white;
+                    padding: 24px;
+                }
+                @media (max-width: 767px) {
+                    .pickup-card {
+                        border-left: 1px solid #d4d4d4;
+                        border-right: 1px solid #d4d4d4;
+                        border-bottom: 1px solid #d4d4d4;
+                    }
+                    .pickup-card-first {
+                        border-top: 1px solid #d4d4d4;
+                        border-top-left-radius: 4px;
+                        border-top-right-radius: 4px;
+                    }
+                    .pickup-card-last {
+                        border-bottom-left-radius: 4px;
+                        border-bottom-right-radius: 4px;
+                        margin-bottom: 32px;
+                    }
+                }
+                @media (min-width: 768px) {
+                    .pickup-card {
+                        border: 1px solid #d4d4d4;
+                        border-radius: 4px;
+                        margin-bottom: 24px;
+                    }
+                }
+                .action-btn {
+                    background-color: #ffb500; color: #121212; height: 50px; border-radius: 25px; font-size: 16px; width: 100%;
+                }
+                @media (min-width: 768px) {
+                    .action-btn { width: auto; padding: 0 40px; }
+                }
+            </style>
+                <div class="d-flex flex-column flex-md-row justify-content-center justify-content-md-start gap-md-3 mb-4">
+                    <button class="btn top-btn">Pickup Status Check</button>
+                    <button class="btn top-btn">Use Classic App</button>
+                    <button class="btn top-btn">Request a Smart Pickup</button>
+                </div>
+                
+                <p class="text-center text-md-start" style="font-size: 16px; color: #121212; margin-bottom: 4px;">
+                    <a href="#" style="color: #0060a8; text-decoration: underline;">Log in</a> to access your accounts and saved details.
+                </p>
+                <p class="text-center text-md-start" style="font-size: 15px; color: #121212; margin-bottom: 32px;">* Indicates required fields.</p>
+                
+                <!-- Progress Bar -->
+                <div class="d-flex justify-content-between align-items-center position-relative mb-5 px-3 mx-auto mx-md-0" style="max-width: 500px;">
+                    <div style="position: absolute; top: 12px; left: 10%; right: 10%; height: 2px; background-color: #a3a3a3; z-index: 1;"></div>
+                    
+                    <div class="d-flex flex-column align-items-center" style="z-index: 2; width: 60px;">
+                        <div class="rounded-circle bg-white d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; border: 4px solid #00827b; margin-bottom: 8px;"></div>
+                        <div style="font-size: 11px; font-weight: 700; color: #121212; text-align: center; line-height: 1.2;">Label &<br>Location</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center" style="z-index: 2; width: 60px;">
+                        <div class="rounded-circle bg-white" style="width: 24px; height: 24px; border: 2px solid #a3a3a3; margin-bottom: 8px;"></div>
+                        <div style="font-size: 11px; font-weight: 400; color: #4a4a4a; text-align: center;">Date & Time</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center" style="z-index: 2; width: 60px;">
+                        <div class="rounded-circle bg-white" style="width: 24px; height: 24px; border: 2px solid #a3a3a3; margin-bottom: 8px;"></div>
+                        <div style="font-size: 11px; font-weight: 400; color: #4a4a4a; text-align: center;">Pay & Review</div>
+                    </div>
+                    
+                    <div class="d-flex flex-column align-items-center" style="z-index: 2; width: 60px;">
+                        <div class="rounded-circle bg-white" style="width: 24px; height: 24px; border: 2px solid #a3a3a3; margin-bottom: 8px;"></div>
+                        <div style="font-size: 11px; font-weight: 400; color: #4a4a4a; text-align: center;">Confirmation</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container-fluid px-3" style="max-width: 900px; margin: 0 auto;">
+            
+            <style>
+                .pickup-input {
+                    height: 56px;
+                    border: 1px solid #d4d4d4;
+                    border-radius: 4px;
+                    font-size: 16px;
+                    color: #121212;
+                    box-shadow: none;
+                }
+                .pickup-input::placeholder {
+                    color: #757575;
+                }
+                .pickup-input:focus {
+                    border-color: #00827b;
+                    box-shadow: inset 0 0 0 1px #00827b;
+                    outline: none;
+                }
+                .pickup-checkbox {
+                    width: 24px;
+                    height: 24px;
+                    border: 1px solid #757575;
+                    border-radius: 4px;
+                    appearance: none;
+                    background-color: white;
+                    cursor: pointer;
+                    position: relative;
+                    flex-shrink: 0;
+                }
+                .pickup-checkbox:checked {
+                    background-color: #00827b;
+                    border-color: #00827b;
+                }
+                .pickup-checkbox:checked::after {
+                    content: "";
+                    position: absolute;
+                    left: 8px;
+                    top: 4px;
+                    width: 6px;
+                    height: 12px;
+                    border: solid white;
+                    border-width: 0 2px 2px 0;
+                    transform: rotate(45deg);
+                }
+                            .pickup-card {
+                    background-color: white;
+                    padding: 24px;
+                }
+                @media (max-width: 767px) {
+                    .pickup-card {
+                        border-left: 1px solid #d4d4d4;
+                        border-right: 1px solid #d4d4d4;
+                        border-bottom: 1px solid #d4d4d4;
+                    }
+                    .pickup-card-first {
+                        border-top: 1px solid #d4d4d4;
+                        border-top-left-radius: 4px;
+                        border-top-right-radius: 4px;
+                    }
+                    .pickup-card-last {
+                        border-bottom-left-radius: 4px;
+                        border-bottom-right-radius: 4px;
+                        margin-bottom: 32px;
+                    }
+                }
+                @media (min-width: 768px) {
+                    .pickup-card {
+                        border: 1px solid #d4d4d4;
+                        border-radius: 4px;
+                        margin-bottom: 24px;
+                    }
+                }
+                .action-btn {
+                    background-color: #ffb500; color: #121212; height: 50px; border-radius: 25px; font-size: 16px; width: 100%;
+                }
+                @media (min-width: 768px) {
+                    .action-btn { width: auto; padding: 0 40px; }
+                }
+            </style>
+            
+            <!-- Main Form Card -->
+            <div>
+                
+                <!-- Section 1: Labels -->
+                <div class="pickup-card pickup-card-first">
+                    <h2 style="font-size: 22px; font-weight: 300; color: #757575; margin-bottom: 24px;">Do you have shipping labels ?</h2>
+                    
+                    <p style="font-size: 16px; color: #121212; margin-bottom: 24px;">
+                        If you've already made a shipping label(s), enter it below. You can also schedule a pickup without a label.<br>
+                        <a href="#" style="color: #0060a8; text-decoration: underline;">Create a shipping label</a>
+                    </p>
+                    
+                    <input type="text" class="form-control pickup-input mb-3" placeholder="Tracking Number">
+                    
+                    <p style="font-size: 16px; color: #121212; margin-bottom: 0;">You can add up to 3 tracking numbers.</p>
+                </div>
+                
+                <!-- Section 2: Address -->
+                <div class="pickup-card">
+                    <h2 style="font-size: 22px; font-weight: 300; color: #757575; margin-bottom: 12px;">What is your pickup address?</h2>
+                    <div style="background-color: #ffb500; height: 3px; width: 40px; margin-bottom: 24px;"></div>
+                    
+                    <div class="form-floating mb-3">
+                        <select class="form-select pickup-input fw-semibold" id="country" style="padding-top: 1.625rem; padding-bottom: 0.625rem;">
+                            <option selected>United States</option>
+                        </select>
+                        <label for="country" style="font-size: 13px; transform: scale(.85) translateY(-.5rem) translateX(.15rem); color: #757575;">*Country</label>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control pickup-input" placeholder="* Company or Name">
+                        </div>
+                        <div class="col-md-6">
+                            <input type="text" class="form-control pickup-input" placeholder="Contact">
+                        </div>
+                    </div>
+                    
+                    <input type="text" class="form-control pickup-input mb-3" placeholder="Search places" style="background-color: #f7f6f4;">
+                    <input type="text" class="form-control pickup-input mb-3" placeholder="* Street Address">
+                    <input type="text" class="form-control pickup-input mb-3" placeholder="Apartment, Suite">
+                    <input type="text" class="form-control pickup-input mb-3" placeholder="Floor">
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <input type="text" class="form-control pickup-input" placeholder="* City">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select pickup-input" id="state" style="padding-top: 1.625rem; padding-bottom: 0.625rem; color: #121212;">
+                                    <option selected>Select</option>
+                                </select>
+                                <label for="state" style="font-size: 13px; transform: scale(.85) translateY(-.5rem) translateX(.15rem); color: #757575;">* State</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control pickup-input" placeholder="* Zip Code">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="tel" class="form-control pickup-input" placeholder="* Phone Number">
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" class="form-control pickup-input" placeholder="Extension">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start gap-3 mb-4 mt-2">
+                        <input type="checkbox" class="pickup-checkbox">
+                        <label style="font-size: 16px; color: #121212; padding-top: 2px;">Residential Address</label>
+                    </div>
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <input type="email" class="form-control pickup-input" placeholder="* Email">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start gap-3 mb-4">
+                        <input type="checkbox" class="pickup-checkbox" checked>
+                        <label style="font-size: 16px; color: #121212; padding-top: 2px;">Email me updates for this pickup.</label>
+                    </div>
+                    
+                    <p style="font-size: 16px; color: #121212; margin-bottom: 4px;">Need to notify others about this pickup?</p>
+                    <a href="#" style="color: #0060a8; text-decoration: underline; font-size: 16px;">Add Email Recipients</a>
+                </div>
+                
+                <!-- Section 3: Packages -->
+                <div class="pickup-card pickup-card-last">
+                    <h2 style="font-size: 22px; font-weight: 300; color: #757575; margin-bottom: 12px; max-width: 250px;">How many packages are we picking?</h2>
+                    <div style="background-color: #ffb500; height: 3px; width: 40px; margin-bottom: 24px;"></div>
+                    
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control pickup-input" id="pkgCount" value="1" style="padding-top: 1.625rem; padding-bottom: 0.625rem; font-size: 16px;">
+                                <label for="pkgCount" style="font-size: 13px; transform: scale(.85) translateY(-.5rem) translateX(.15rem); color: #757575;">* Package(s) in your pickup</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="position-relative">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control pickup-input pe-5" id="pkgWeight" placeholder=" " style="padding-top: 1.625rem; padding-bottom: 0.625rem; font-size: 16px;">
+                                    <label for="pkgWeight" style="font-size: 13px; transform: scale(.85) translateY(-.5rem) translateX(.15rem); color: #757575;">* Total Weight of Your Pickup</label>
+                                </div>
+                                <div style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #121212; font-size: 16px; z-index: 4; pointer-events: none;">lbs</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p style="font-size: 13px; color: #4a4a4a; line-height: 1.5; margin-bottom: 24px; margin-top: 8px;">
+                        Select the UPS Service(s) indicated by your UPS Shipping Label(s) to get the available time and date for collection.
+                    </p>
+                    
+                    <div class="d-flex align-items-start gap-3">
+                        <input type="checkbox" class="pickup-checkbox">
+                        <label style="font-size: 14px; color: #121212; padding-top: 2px;">I have a package that weighs more than 70 lbs/32Kg.</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex flex-column flex-md-row align-items-md-center gap-md-4 mb-4 pb-2">
+                <button class="btn fw-bold action-btn mb-3 mb-md-0">Select Date & Time</button>
+                <a href="#" style="color: #0060a8; text-decoration: none; font-size: 16px;">Cancel</a>
+            </div>
+            
+            <!-- Drop off Banner -->
+            <div class="d-flex align-items-center justify-content-md-center p-3 mb-4" style="background-color: transparent;">
+                <!-- Recreate the isometric box icon -->
+                <div class="me-3 position-relative" style="width: 50px; height: 50px;">
+                    <svg viewBox="0 0 100 100" width="60" height="60" style="margin-left: -10px; margin-top: -5px;">
+                        <!-- Isometric Store/Box representation -->
+                        <polygon points="50,20 85,35 85,75 50,90 15,75 15,35" fill="#d9a05b"/>
+                        <polygon points="50,20 15,35 50,55 85,35" fill="#f3c285"/>
+                        <polygon points="15,35 50,55 50,90 15,75" fill="#c3833b"/>
+                        <polygon points="50,55 85,35 85,75 50,90" fill="#a66524"/>
+                        <!-- Store Awning Stripes -->
+                        <polygon points="15,35 30,44 30,58 15,50" fill="#ffb500"/>
+                        <polygon points="30,44 40,49 40,63 30,58" fill="#3b2c24"/>
+                        <polygon points="40,49 50,55 50,70 40,63" fill="#ffb500"/>
+                    </svg>
+                </div>
+                <div>
+                    <div style="font-size: 18px; font-weight: 700; color: #121212; margin-bottom: 4px; line-height: 1.2;">Drop off your package(s) at any UPS location!</div>
+                    <a href="#" style="color: #0060a8; font-weight: 500; text-decoration: none; font-size: 16px;">Find nearest location ></a>
+                </div>
+            </div>
+            
+            <!-- Summary Card -->
+            <div class="bg-white p-4 mb-4" style="border: 1px solid #d4d4d4; border-radius: 4px;">
+                <h2 style="font-size: 18px; font-weight: 700; color: #121212; margin-bottom: 24px;">Summary</h2>
+                <p style="font-size: 16px; color: #757575; margin-bottom: 0;">Check back here after entering more information.</p>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-light pt-5 pb-4" style="background-color: #351c15;">
+        <div class="container-xxl px-3 px-xl-4" style="max-width: 1392px;">
+            <div class="row mb-0 mb-md-5">
+                <!-- Support -->
+                <div class="col-12 col-md-3 border-bottom border-md-0 py-4 py-md-0 footer-section" style="border-color: #554039 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-0 mb-md-4 footer-header" style="cursor: pointer;">
+                        <h3 class="h5 h6-md fw-bold text-white mb-0">Support</h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-medium d-md-none footer-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <ul class="list-unstyled d-none d-md-block m-0 footer-content mt-4 mt-md-0">
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Help and Support Center</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Tracking Support</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Where's My Package</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Shipping Guides and Resources</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">International Shipping Guides</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Communication Preferences</a></li>
+                    </ul>
+                </div>
+                <!-- UPS Sites -->
+                <div class="col-12 col-md-3 border-bottom border-md-0 py-4 py-md-0 footer-section" style="border-color: #554039 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-0 mb-md-4 footer-header" style="cursor: pointer;">
+                        <h3 class="h5 h6-md fw-bold text-white mb-0">UPS Sites</h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-medium d-md-none footer-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <ul class="list-unstyled d-none d-md-block m-0 footer-content mt-4 mt-md-0">
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">About UPS <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">UPS Jobs <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">UPS Healthcare</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">UPS Supply Chain Solutions</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">The UPS Store <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">UPS Developer Portal <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                    </ul>
+                </div>
+                <!-- UPS Companies -->
+                <div class="col-12 col-md-3 border-bottom border-md-0 py-4 py-md-0 footer-section" style="border-color: #554039 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-0 mb-md-4 footer-header" style="cursor: pointer;">
+                        <h3 class="h5 h6-md fw-bold text-white mb-0">UPS Companies</h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-medium d-md-none footer-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <ul class="list-unstyled d-none d-md-block m-0 footer-content mt-4 mt-md-0">
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Happy Returns</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Roadie</a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">InsureShield Shipping Insurance<sup>&reg;</sup></a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Parcel Pro<sup>&reg;</sup></a></li>
+                        <li class="mb-3 mb-md-2"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-inline-flex align-items-center gap-1" style="font-size: 15px;">Delivery Solutions <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                    </ul>
+                </div>
+                <!-- Connect with Us -->
+                <div class="col-12 col-md-3 border-bottom border-md-0 py-4 py-md-0 footer-section" style="border-color: #554039 !important;">
+                    <div class="d-flex justify-content-between align-items-center mb-0 mb-md-4 footer-header" style="cursor: pointer;">
+                        <h3 class="h5 h6-md fw-bold text-white mb-0">Connect with Us</h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-medium d-md-none footer-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <ul class="list-unstyled d-none d-md-block m-0 footer-content mt-4 mt-md-0">
+                        <li class="mb-4 mb-md-3"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-flex align-items-center gap-3 gap-md-2" style="font-size: 15px;"><span class="border rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;"><svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></span> Facebook <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small ms-1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-4 mb-md-3"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-flex align-items-center gap-3 gap-md-2" style="font-size: 15px;"><span class="border rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px; font-size: 10px; font-weight: bold;">X</span> X <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small ms-1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-4 mb-md-3"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-flex align-items-center gap-3 gap-md-2" style="font-size: 15px;"><span class="border rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;"><svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg></span> Instagram <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small ms-1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-4 mb-md-3"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-flex align-items-center gap-3 gap-md-2" style="font-size: 15px;"><span class="border rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;"><svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></span> LinkedIn <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small ms-1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                        <li class="mb-4 mb-md-3"><a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover d-flex align-items-center gap-3 gap-md-2" style="font-size: 15px;"><span class="border rounded-circle d-flex align-items-center justify-content-center" style="width: 24px; height: 24px;"><svg style="width:12px; height:12px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33 2.78 2.78 0 0 0 1.94 2c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.33 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg></span> YouTube <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-small ms-1"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg></a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="border-bottom d-none d-md-block mb-4" style="border-color: #554039 !important;"></div>
+
+            <div class="px-md-0" style="font-size: 14px;">
+                <div class="d-md-none border-bottom py-4 footer-section" style="border-color: #554039 !important;">
+                    <div class="d-flex justify-content-between align-items-center footer-header" style="cursor: pointer;">
+                        <h3 class="h5 fw-bold text-white mb-0">Legal</h3>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-medium footer-chevron" style="transition: transform 0.3s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </div>
+                    <ul class="list-unstyled d-none d-md-block m-0 footer-content mt-4">
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Global Home</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Protect Against Fraud</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Terms and Conditions</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Website Terms of Use</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Your California Privacy Rights</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Privacy Notice</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Cookie Settings</a></li>
+                        <li class="mb-4"><a href="#" class="text-decoration-none text-light opacity-75">Do Not Sell or Share My Personal Information</a></li>
+                    </ul>
+                </div>
+
+                <div class="d-none d-md-flex flex-wrap align-items-center mb-3" style="font-size: 12px;">
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Global Home</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Protect Against Fraud</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Terms and Conditions</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Website Terms of Use</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Your California Privacy Rights</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Privacy Notice</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Cookie Settings</a>
+                    <span class="mx-2 text-secondary">|</span>
+                    <a href="#" class="text-decoration-none text-light opacity-75 text-decoration-underline-hover lh-lg">Do Not Sell or Share My Personal Information</a>
+                </div>
+                <div class="text-secondary opacity-75 mt-3 mt-md-0 pt-2 pt-md-0" style="font-size: 15px;">
+                    <p class="mb-0">Copyright &copy;1994-2026 United Parcel Service of America, Inc. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Floating Chat Button -->
+    <div class="position-fixed rounded-circle d-flex justify-content-center align-items-center text-white shadow" style="bottom: 30px; right: 30px; width: 60px; height: 60px; background-color: #0060a8; cursor: pointer; z-index: 100;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+
+    
+
+    <style>
+        .footer-content.open { display: block !important; }
+        .footer-chevron.open { transform: rotate(180deg); }
+        .drawer-accordion-content.open { 
+            display: block !important; 
+            max-height: 60vh; 
+            overflow-y: auto; 
+            overscroll-behavior: contain;
+        }
+        .drawer-accordion-header.open .drawer-accordion-title { color: #0060a8 !important; }
+        .drawer-accordion-header.open .drawer-accordion-chevron { transform: rotate(180deg); color: #0060a8; }
+                    .pickup-card {
+                    background-color: white;
+                    padding: 24px;
+                }
+                @media (max-width: 767px) {
+                    .pickup-card {
+                        border-left: 1px solid #d4d4d4;
+                        border-right: 1px solid #d4d4d4;
+                        border-bottom: 1px solid #d4d4d4;
+                    }
+                    .pickup-card-first {
+                        border-top: 1px solid #d4d4d4;
+                        border-top-left-radius: 4px;
+                        border-top-right-radius: 4px;
+                    }
+                    .pickup-card-last {
+                        border-bottom-left-radius: 4px;
+                        border-bottom-right-radius: 4px;
+                        margin-bottom: 32px;
+                    }
+                }
+                @media (min-width: 768px) {
+                    .pickup-card {
+                        border: 1px solid #d4d4d4;
+                        border-radius: 4px;
+                        margin-bottom: 24px;
+                    }
+                }
+                .action-btn {
+                    background-color: #ffb500; color: #121212; height: 50px; border-radius: 25px; font-size: 16px; width: 100%;
+                }
+                @media (min-width: 768px) {
+                    .action-btn { width: auto; padding: 0 40px; }
+                }
+            </style>
+    <script>
+        const footerHeaders = document.querySelectorAll('.footer-header');
+        footerHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                if(window.innerWidth >= 768) return; // Only run on mobile
+                const content = header.nextElementSibling;
+                const chevron = header.querySelector('.footer-chevron');
+                
+                const isOpen = content.classList.contains('open');
+                
+                // Close all currently open accordion sections
+                document.querySelectorAll('.footer-content.open').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.footer-chevron.open').forEach(el => el.classList.remove('open'));
+                
+                // Open the clicked one if it wasn't already open
+                if (!isOpen) {
+                    content.classList.add('open');
+                    chevron.classList.add('open');
+                }
+            });
+        });
+    </script>
+    <script>
+        const drawerHeaders = document.querySelectorAll('.drawer-accordion-header');
+        drawerHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const content = header.nextElementSibling;
+                if(!content || !content.innerHTML.trim()) return; // Don't do anything if no content
+                
+                const isOpen = content.classList.contains('open');
+                
+                // Close all currently open accordion sections in the drawer
+                document.querySelectorAll('.drawer-accordion-content.open').forEach(el => el.classList.remove('open'));
+                document.querySelectorAll('.drawer-accordion-header.open').forEach(el => el.classList.remove('open'));
+                
+                // Open the clicked one if it wasn't already open
+                if (!isOpen) {
+                    content.classList.add('open');
+                    header.classList.add('open');
+                }
+            });
+        });
+
+        const hamburgerBtn = document.querySelector('.hamburger-btn');
+        const hamburgerIcon = document.querySelector('.hamburger-icon');
+        const closeIcon = document.querySelector('.close-icon');
+        const mobileNavDrawer = document.getElementById('mobileNavDrawer');
+        const mobileNavOverlay = document.getElementById('mobileNavOverlay');
+
+        function toggleNav() {
+            if (mobileNavDrawer.style.right === '0px') {
+                mobileNavDrawer.style.right = '-100%';
+                mobileNavOverlay.style.opacity = '0';
+                setTimeout(() => { mobileNavOverlay.style.visibility = 'hidden'; }, 300);
+                hamburgerIcon.classList.remove('d-none');
+                closeIcon.classList.add('d-none');
+            } else {
+                mobileNavDrawer.style.right = '0px';
+                mobileNavOverlay.style.visibility = 'visible';
+                mobileNavOverlay.style.opacity = '0.5';
+                hamburgerIcon.classList.add('d-none');
+                closeIcon.classList.remove('d-none');
+            }
+        }
+
+        if(hamburgerBtn) hamburgerBtn.addEventListener('click', toggleNav);
+        if(mobileNavOverlay) mobileNavOverlay.addEventListener('click', toggleNav);
+    </script>
+</body></html>

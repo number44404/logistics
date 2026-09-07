@@ -1,0 +1,187 @@
+:root {
+    --brand-brown: #351c15; 
+    --brand-gold: #ffc400; 
+    --bg-light: #f3f3f3; 
+    --text-main: #121212;
+    --text-muted: #5f5753;
+    --border-color: #dfdbd7;
+    --white: #ffffff;
+    --link-blue: #0662bb; 
+    --hover-gold: #ffd64c;
+    --max-content-width: 1392px;
+    --ups-black: #121212;
+    --section-inline-padding: 1rem;
+}
+
+@media (width >= 1280px) {
+    :root {
+        --heading-font-size-xl: 3rem;
+        --heading-font-size-l: 2.5rem;
+        --heading-font-size-m: 2rem;
+        --body-font-size-l: 1.25rem;
+        --section-inline-padding: 2rem;
+        --header-height: 164px;
+        --global-header-height: 204px;
+    }
+}
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: roboto, roboto-fallback, tahoma, helvetica, arial, sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Icons */
+.icon-small {
+    width: 16px;
+    height: 16px;
+}
+.icon-medium {
+    width: 20px;
+    height: 20px;
+}
+.tooltip-icon {
+    width: 15px;
+    height: 15px;
+}
+
+.text-decoration-underline-hover:hover {
+    text-decoration: underline !important;
+}
+
+/* UPS Custom Elements & Buttons Fallback */
+ups-cta, ups-track-reference, import-track, other-services {
+    display: inline-block;
+}
+.ups-cta-new {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+.ups-cta-primary {
+    background-color: var(--teal, #0a8080);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+}
+.ups-cta-primary:hover {
+    background-color: var(--teal-deep, #075A5A);
+    color: white;
+}
+.ups-cta-primary .icon {
+    margin-left: 8px !important;
+}
+.ups-cta-tertiary {
+    color: var(--blue, #0662bb);
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    text-decoration: none;
+    background: transparent;
+    padding: 8px 0;
+}
+.ups-cta-tertiary:hover {
+    text-decoration: underline;
+    color: var(--blue-darker, #105497);
+}
+.ups-cta-tertiary .icon {
+    margin-left: 4px;
+}
+.ups-textArea {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 16px;
+    font-size: 1rem;
+    resize: vertical;
+}
+.ups-textArea:focus {
+    border-color: var(--blue);
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--blue);
+}
+.ups-txt_size_xl {
+    font-size: 2rem;
+    font-weight: 300;
+    color: var(--brand-brown);
+}
+
+/* Appended UPS Styles */
+.ups-card .card-body {
+    padding: 2rem;
+}
+@media (min-width: 768px) {
+    .p-md-4 {
+        padding: 1.5rem !important;
+    }
+}
+@media (min-width: 320px) {
+    .p-sm-3 {
+        padding: 1rem !important;
+    }
+}
+.card-body {
+    flex: 1 1 auto;
+    min-height: 1px;
+    padding: 1.25rem;
+}
+.ups-card-standalone, .ups-radio-card_container .ups-radio-card label {
+    border-radius: .25rem;
+    box-shadow: 0px 4px 12px -3px rgba(0, 0, 0, .051), 0px 2px 5px 0px rgba(0, 0, 0, .141);
+    margin: 0 0 1.75rem 0;
+    transition: all .35s ease-out;
+    min-width: 100%;
+    cursor: default;
+    overflow: visible;
+}
+
+/* Material Symbols Fix */
+.ups-material-symbols {
+  font-family: 'Material Symbols Rounded' !important;
+  font-feature-settings: 'liga';
+  -webkit-font-feature-settings: 'liga';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;  /* Preferred icon size */
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+}
+.ups-icon_size_xs { font-size: 16px; }
+.ups-icon_size_sm { font-size: 20px; }
+.ups-icon_size_md { font-size: 24px; }
+.ups-icon_size_lg { font-size: 32px; }
+
+
+.ups-material-symbols.icon-filled {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+.ups-material-symbols:not(.icon-filled) {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+

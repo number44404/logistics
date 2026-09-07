@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Operations Center | Admin</title>
+    
+    <!-- Bootstrap 5 for core structure like frontend -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Material Symbols matching frontend -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <link rel="stylesheet" href="admin.css">
+    
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="db-helpers.js"></script>
+</head>
+<body>
+
+<div id="app" class="app-container" style="display: none;">
+    
+    <!-- DESKTOP SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <span class="material-symbols-rounded" style="color:var(--ups-yellow)">local_shipping</span>
+            Operations Center
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" onclick="showDashboard()">
+                <span class="material-symbols-rounded">dashboard</span> Dashboard
+            </a>
+            <a href="#" class="nav-item" onclick="showCreateView()">
+                <span class="material-symbols-rounded">add_box</span> New Shipment
+            </a>
+            <a href="#" class="nav-item" onclick="showPaymentsView()">
+                <span class="material-symbols-rounded">payments</span> Payments
+            </a>
+            <a href="#" class="nav-item" id="nav-accounts" onclick="showAccountsView()">
+                <span class="material-symbols-rounded">account_balance</span> Payment Accounts
+            </a>
+            <a href="support.html" class="nav-item">
+                <span class="material-symbols-rounded">support_agent</span> Customer Care
+            </a>
+            <a href="#" class="nav-item" onclick="logout()">
+                <span class="material-symbols-rounded">logout</span> Sign Out
+            </a>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+        <!-- DESKTOP HEADER -->
+        <header class="top-header">
+            <div class="header-title" id="desktop-header-title">Shipment Overview</div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="material-symbols-rounded" style="color:var(--text-muted)">notifications</span>
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width:32px;height:32px;background:var(--ups-brown);border-radius:50%;color:white;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.875rem;">AD</div>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-wrapper">
+            
+            <!-- DASHBOARD VIEW -->
+            <div id="dashboard-view" class="view">
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>Total Shipments</h3><div class="num" id="stat-total">0</div></div>
+                    <div class="stat-card"><h3>Pending</h3><div class="num" id="stat-pending">0</div></div>
+                    <div class="stat-card"><h3>In Transit</h3><div class="num" id="stat-transit">0</div></div>
+                    <div class="stat-card"><h3>Delivered</h3><div class="num" id="stat-delivered">0</div></div>
+                </div>
+
+                <div class="d-flex flex-column flex-md-row gap-3 mb-4 bg-white p-3 border">
+                    <div class="flex-grow-1">
+                        <input type="text" class="form-control rounded-0" id="search-input" placeholder="Search tracking number or customer..." onkeyup="filterTable()">
+                    </div>
+                    <select class="form-select rounded-0" style="width:auto" id="filter-status" onchange="filterTable()">
+                        <option value="All">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Picked Up">Picked Up</option>
+                        <option value="In Transit">In Transit</option>
+                        <option value="Arrived">Arrived</option>
+                        <option value="Out For Delivery">Out For Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                    </select>
+                    <select class="form-select rounded-0" style="width:auto" id="sort-order" onchange="filterTable()">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
+
+                <!-- DESKTOP TABLE -->
+                <div class="table-container">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Tracking #</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Destination</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="desktop-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MOBILE CARDS -->
+                <div class="mobile-shipment-list" id="mobile-list">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <!-- PAYMENTS VIEW -->
+            <div id="payments-view" class="view">
+                <div class="stats-grid mb-4">
+                    <div class="stat-card"><h3>Total Received</h3><div class="num" id="stat-payments-total">$0</div></div>
+                    <div class="stat-card"><h3>Pending Verification</h3><div class="num" id="stat-payments-pending">0</div></div>
+                </div>
+                
+                <div class="d-flex flex-column flex-md-row gap-3 mb-4 bg-white p-3 border">
+                    <div class="flex-grow-1">
+                        <input type="text" class="form-control rounded-0" id="search-payments-input" placeholder="Search tracking or customer..." onkeyup="filterPaymentsTable()">
+                    </div>
+                    <select class="form-select rounded-0" style="width:auto" id="filter-payment-status" onchange="filterPaymentsTable()">
+                        <option value="All">All Statuses</option>
+                        <option value="pending_verification">Pending Review</option>
+                        <option value="verified">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Tracking #</th>
+                                <th>Method</th>
+                                <th>Amount</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MOBILE CARDS -->
+                <div class="mobile-shipment-list" id="mobile-payments-list">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <!-- PAYMENT ACCOUNTS VIEW -->
+            <div id="accounts-view" class="view">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0 fw-bold" style="color:var(--ups-brown)">Payment Accounts</h2>
+                    <button class="btn btn-ups rounded-0 fw-bold" onclick="openAddAccountModal()">
+                        <span class="material-symbols-rounded align-middle me-1" style="font-size:1.1rem">add</span>
+                        Add Account
+                    </button>
+                </div>
+
+                <div class="alert alert-info rounded-0 small mb-4">
+                    <span class="material-symbols-rounded align-middle me-1" style="font-size:1rem">info</span>
+                    Only <strong>one account can be active</strong> at a time. Activating a new account will automatically deactivate all others.
+                </div>
+
+                <!-- DESKTOP TABLE -->
+                <div class="table-container">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Bank Name</th>
+                                <th>Account Name</th>
+                                <th>Account Number</th>
+                                <th>Account Type</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="accounts-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MOBILE CARDS -->
+                <div class="mobile-shipment-list" id="mobile-accounts-list">
+                    <!-- Injected by JS -->
+                </div>
+            </div>
+
+            <!-- ADD/EDIT ACCOUNT MODAL -->
+            <div class="modal fade" id="accountModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-0">
+                        <div class="modal-header border-0 bg-light">
+                            <h5 class="modal-title fw-bold" style="color:var(--ups-brown)">
+                                <span class="material-symbols-rounded align-middle me-2">account_balance</span>
+                                <span id="account-modal-title">Add Payment Account</span>
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="alert alert-danger d-none rounded-0" id="account-modal-error"></div>
+                            <form id="account-form" onsubmit="saveAccount(event)">
+                                <input type="hidden" id="account-edit-id">
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-1 small text-uppercase">Bank Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control rounded-0" id="acc-bank-name" required placeholder="e.g. First National Bank">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-1 small text-uppercase">Account Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control rounded-0" id="acc-account-name" required placeholder="e.g. UPS Logistics Ltd">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-1 small text-uppercase">Account Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control rounded-0" id="acc-account-number" required placeholder="e.g. 0123456789">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-1 small text-uppercase">Account Type</label>
+                                    <select class="form-select rounded-0" id="acc-account-type">
+                                        <option value="">— Select Type —</option>
+                                        <option value="Current">Current</option>
+                                        <option value="Savings">Savings</option>
+                                        <option value="Domiciliary">Domiciliary</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="mb-4">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="acc-is-active" role="switch">
+                                        <label class="form-check-label fw-bold" for="acc-is-active">Set as Active Account</label>
+                                    </div>
+                                    <div class="small text-muted mt-1">Enabling this will deactivate all other accounts.</div>
+                                </div>
+                                <button type="submit" class="btn btn-ups rounded-0 w-100 fw-bold" id="account-save-btn">Save Account</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ASSIGN BANK ACCOUNT MODAL -->
+            <div class="modal fade" id="assignBankAccountModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content rounded-0">
+                        <div class="modal-header border-0 bg-light">
+                            <h5 class="modal-title fw-bold" style="color:var(--ups-brown)">
+                                <span class="material-symbols-rounded align-middle me-2">account_balance</span>
+                                Assign Bank Account
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="alert alert-danger d-none rounded-0" id="assign-modal-error"></div>
+                            <form id="assign-account-form" onsubmit="submitAccountAssignment(event)">
+                                <input type="hidden" id="assign-request-id">
+                                <div class="mb-4">
+                                    <label class="fw-bold mb-1 small text-uppercase">Select Active Account <span class="text-danger">*</span></label>
+                                    <select class="form-select rounded-0" id="assign-account-select" required>
+                                        <option value="">— Select an active account —</option>
+                                        <!-- Options populated by JS -->
+                                    </select>
+                                    <div class="small text-muted mt-2">The selected account details will be securely sent to the receiver.</div>
+                                </div>
+                                <button type="submit" class="btn btn-ups rounded-0 w-100 fw-bold" id="assign-save-btn">Send Account to Receiver</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUPPORT VIEW -->
+            <div id="support-view" class="view">
+                <div class="stats-grid mb-4">
+                    <div class="stat-card"><h3>Total Open</h3><div class="num" id="stat-support-open">0</div></div>
+                    <div class="stat-card"><h3>Resolved Today</h3><div class="num" id="stat-support-resolved">0</div></div>
+                </div>
+                
+                <div class="d-flex flex-column flex-md-row gap-3 mb-4 bg-white p-3 border">
+                    <div class="flex-grow-1">
+                        <input type="text" class="form-control rounded-0" id="search-support-input" placeholder="Search tracking, subject, or customer..." onkeyup="filterSupportTable()">
+                    </div>
+                    <select class="form-select rounded-0" style="width:auto" id="filter-support-status" onchange="filterSupportTable()">
+                        <option value="All">All Statuses</option>
+                        <option value="open">Open</option>
+                        <option value="pending">Pending</option>
+                        <option value="resolved">Resolved</option>
+                    </select>
+                </div>
+
+                <div class="table-container">
+                    <table class="table-custom">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Tracking #</th>
+                                <th>Customer</th>
+                                <th>Status</th>
+                                <th>Priority</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="support-tbody">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CHOICE VIEW -->
+            <div id="choice-view" class="view">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="mb-0 fw-bold" style="color:var(--ups-brown)">Select Workflow</h2>
+                    <button class="btn btn-outline-ups d-md-none" onclick="showDashboard()">Back</button>
+                </div>
+                <div class="row g-4">
+                    <div class="col-12 col-md-6">
+                        <div class="card h-100 border-0 shadow-sm text-center p-4 cursor-pointer" style="border-top: 4px solid var(--ups-yellow) !important; cursor: pointer; transition: transform 0.2s;" onclick="startWorkflow('manual')" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <span class="material-symbols-rounded mx-auto mb-3" style="font-size: 3.5rem; color:var(--ups-brown)">inventory_2</span>
+                            <h4 class="fw-bold">Create Complete Shipment</h4>
+                            <p class="text-muted">I have all sender and receiver information.</p>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="card h-100 border-0 shadow-sm text-center p-4 cursor-pointer" style="border-top: 4px solid var(--ups-blue) !important; cursor: pointer; transition: transform 0.2s;" onclick="startWorkflow('link')" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'">
+                            <span class="material-symbols-rounded mx-auto mb-3" style="font-size: 3.5rem; color:var(--ups-blue)">link</span>
+                            <h4 class="fw-bold">Request Receiver Information</h4>
+                            <p class="text-muted">Send receiver a secure form link.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORM VIEW -->
+            <div id="form-view" class="view">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 id="form-title" class="mb-0 fw-bold" style="color:var(--ups-brown)">Create Shipment</h2>
+                    <button class="btn btn-outline-ups d-md-none" onclick="switchView('choice-view')">Back</button>
+                    <button class="btn btn-outline-ups d-none d-md-block" onclick="switchView('choice-view')">Back to Choices</button>
+                </div>
+                
+                <form id="shipment-form" class="pb-5 pb-md-0">
+                    <input type="hidden" id="shipment_id">
+                    
+                    <!-- SECTION 1: Shipment Information -->
+                    <div class="card bg-white border-0 shadow-sm mb-4" style="border-top:4px solid var(--ups-yellow) !important;">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3 d-flex align-items-center" style="color:var(--ups-brown)"><span class="material-symbols-rounded me-2">qr_code_scanner</span>Shipment Information</h5>
+                            
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-2 text-muted small text-uppercase">Tracking Number</label>
+                                    <div class="input-group input-group-lg">
+                                        <input type="text" class="form-control rounded-0 bg-light fw-bold text-dark fs-5" id="tracking_number" readonly required>
+                                        <button type="button" class="btn btn-outline-ups rounded-0 fw-bold px-3" onclick="generateTracking()" id="generate-btn">Generate</button>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-2 text-muted small text-uppercase">Service Level</label>
+                                    <select class="form-select form-select-lg rounded-0" id="shipping_method">
+                                        <option value="Standard">Standard</option>
+                                        <option value="Ground">Ground</option>
+                                        <option value="Next Day Air">Next Day Air</option>
+                                        <option value="2nd Day Air">2nd Day Air</option>
+                                        <option value="Express Worldwide">Express Worldwide</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-2 text-muted small text-uppercase">Billing Party</label>
+                                    <select class="form-select form-select-lg rounded-0" id="billing_party">
+                                        <option value="Sender">Sender</option>
+                                        <option value="Receiver">Receiver</option>
+                                        <option value="Third Party">Third Party</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-3">
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-2 text-muted small text-uppercase">Customer Reference (PO)</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="customer_reference" placeholder="Optional">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-2 text-muted small text-uppercase">Origin Routing Facility</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="origin_facility" placeholder="e.g. US-NYC-HUB">
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-2 text-muted small text-uppercase">Destination Routing Facility</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="destination_facility" placeholder="e.g. UK-LON-HUB">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 2: Sender Details -->
+                    <div class="card bg-white border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3 d-flex align-items-center" style="color:var(--ups-brown)"><span class="material-symbols-rounded me-2">person</span>Sender Details</h5>
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Full Name / Company</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="sender_name" required>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Email</label>
+                                    <input type="email" class="form-control form-control-lg rounded-0" id="sender_email">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Phone</label>
+                                    <input type="tel" class="form-control form-control-lg rounded-0" id="sender_phone">
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Street Address</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="sender_address" placeholder="123 Main St">
+                                </div>
+                                <div class="col-12 col-md-2">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">City</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="sender_city" required>
+                                </div>
+                                <div class="col-12 col-md-2">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Country</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="sender_country" placeholder="US" required>
+                                </div>
+                                <div class="col-12 col-md-2">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Postal Code</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="sender_postal">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 3: Receiver Details -->
+                    <div class="card bg-white border-0 shadow-sm mb-4" id="receiver-section">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3 d-flex align-items-center" style="color:var(--ups-brown)"><span class="material-symbols-rounded me-2">location_on</span>Receiver Details</h5>
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Full Name / Company</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_name" required>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Email</label>
+                                    <input type="email" class="form-control form-control-lg rounded-0" id="receiver_email">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Phone</label>
+                                    <input type="tel" class="form-control form-control-lg rounded-0" id="receiver_phone">
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Street Address</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_address" placeholder="456 High St" required>
+                                </div>
+                                <div class="col-12 col-md-2">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">City</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_city" required>
+                                </div>
+                                <div class="col-12 col-md-2">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Country</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_country" placeholder="UK" required>
+                                </div>
+                                <div class="col-12 col-md-2">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Postal Code</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_postal" required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 4: Package Details -->
+                    <div class="card bg-white border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3 d-flex align-items-center" style="color:var(--ups-brown)"><span class="material-symbols-rounded me-2">inventory_2</span>Package Details</h5>
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Weight</label>
+                                    <div class="input-group input-group-lg">
+                                        <input type="number" step="0.1" min="0" class="form-control rounded-0" id="package_weight" placeholder="0" required>
+                                        <span class="input-group-text rounded-0 fw-bold bg-light">lbs</span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Length</label>
+                                    <input type="number" step="0.1" min="0" class="form-control form-control-lg rounded-0" id="package_length" placeholder="in">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Width</label>
+                                    <input type="number" step="0.1" min="0" class="form-control form-control-lg rounded-0" id="package_width" placeholder="in">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Height</label>
+                                    <input type="number" step="0.1" min="0" class="form-control form-control-lg rounded-0" id="package_height" placeholder="in">
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Package Type</label>
+                                    <select class="form-select form-select-lg rounded-0" id="package_type">
+                                        <option value="Box">Custom Box</option>
+                                        <option value="Envelope">Express Envelope</option>
+                                        <option value="Tube">Tube</option>
+                                        <option value="Pak">Express Pak</option>
+                                        <option value="Pallet">Pallet</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Contents Description</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="package_description" placeholder="Optional details (e.g., Electronics, Documents)">
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Declared Value ($)</label>
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-lg rounded-0" id="package_value" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECTION 5: Status & Delivery -->
+                    <div class="card bg-white border-0 shadow-sm mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3 d-flex align-items-center" style="color:var(--ups-brown)"><span class="material-symbols-rounded me-2">event_available</span>Status & Delivery</h5>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Current Status</label>
+                                    <select class="form-select form-select-lg rounded-0 fw-bold text-dark border-secondary" id="status" required style="border-width: 2px;">
+                                        <option value="Pending">Pending</option>
+                                        <option value="Picked Up">Picked Up</option>
+                                        <option value="In Transit">In Transit</option>
+                                        <option value="Arrived">Arrived</option>
+                                        <option value="Out For Delivery">Out For Delivery</option>
+                                        <option value="Delivered">Delivered</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Estimated Delivery Date</label>
+                                    <input type="date" class="form-control form-control-lg rounded-0 fw-bold text-dark" id="estimated_delivery" required>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-1 text-muted small text-uppercase">Shipping Fee ($)</label>
+                                    <input type="number" step="0.01" min="0" class="form-control form-control-lg rounded-0 fw-bold text-dark" id="shipping_fee" placeholder="0.00">
+                                </div>
+                            </div>
+                            
+                            <div class="p-3 bg-light border border-start-0 border-end-0 border-bottom-0" id="event-location-group" style="margin: 0 -1.5rem -1.5rem -1.5rem;">
+                                <div class="d-flex align-items-start gap-2">
+                                    <span class="material-symbols-rounded mt-1" style="color:var(--ups-brown)">add_location</span>
+                                    <div class="flex-grow-1">
+                                        <label class="fw-bold mb-1">Event Location</label>
+                                        <input type="text" class="form-control rounded-0" id="event_location" placeholder="e.g. London Sorting Center (Optional)">
+                                        <small class="text-muted mt-1 d-block" id="event-help-text">This location will be used to log the initial "Shipment Registered" event.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="form-error" class="alert alert-danger rounded-0 fw-bold mb-4 shadow-sm" style="display:none; border-left: 4px solid #dc3545;"></div>
+
+                    <!-- STICKY SUBMIT FOOTER -->
+                    <div class="sticky-form-footer d-flex justify-content-end bg-white p-3 p-md-0 border-top border-md-0 mt-4 pt-md-3">
+                        <button type="submit" id="save-btn" class="btn btn-ups btn-lg rounded-0 px-5 w-100 w-md-auto fw-bold shadow-sm">Save Shipment</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- SUCCESS VIEW -->
+            <div id="success-view" class="view">
+                <div class="card bg-white border-0 shadow-sm text-center py-5" style="border-top:4px solid var(--ups-yellow) !important;">
+                    <div class="card-body">
+                        <span class="material-symbols-rounded text-success mb-3" style="font-size: 5rem;">check_circle</span>
+                        <h2 class="fw-bold mb-4" id="success-title" style="color:var(--ups-brown)">Shipment Created Successfully</h2>
+                        <p class="text-muted mb-2 text-uppercase fw-bold" id="success-label">Tracking Number:</p>
+                        <h1 class="fw-bold text-dark mb-5" id="success-tracking-number" style="letter-spacing: 2px;">TRK-XXXXXX</h1>
+                        <p class="text-muted mb-4 d-none" id="success-helper-text">Send this link to the receiver. The shipment will remain in Draft state until they complete their address.</p>
+                        
+                        <div class="d-flex flex-column flex-md-row justify-content-center gap-3">
+                            <button class="btn btn-outline-secondary btn-lg rounded-0 fw-bold px-4" onclick="copyTracking()">
+                                <span class="material-symbols-rounded align-middle me-1">content_copy</span> Copy Tracking Number
+                            </button>
+                            <button class="btn btn-outline-ups btn-lg rounded-0 fw-bold px-4" onclick="showDashboard()">
+                                <span class="material-symbols-rounded align-middle me-1">list_alt</span> View Shipments
+                            </button>
+                            <button class="btn btn-ups btn-lg rounded-0 fw-bold px-4" onclick="showCreateView()">
+                                <span class="material-symbols-rounded align-middle me-1">add</span> Create Another
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+    
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="bottom-nav">
+        <a href="#" class="bottom-nav-item active" onclick="showDashboard()">
+            <span class="material-symbols-rounded">dashboard</span>
+            Dashboard
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="showCreateView()">
+            <span class="material-symbols-rounded">add_box</span>
+            Create
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="logout()">
+            <span class="material-symbols-rounded">logout</span>
+            Logout
+        </a>
+    </nav>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-overlay" class="login-overlay">
+    <div class="login-box">
+        <div class="login-logo">
+            <span class="material-symbols-rounded d-block mb-2" style="font-size:3rem;color:var(--ups-yellow)">local_shipping</span>
+            Operations Login
+        </div>
+        <form id="login-form">
+            <div class="mb-3"><label class="fw-bold mb-1">Email</label><input type="email" class="form-control rounded-0" id="email" required></div>
+            <div class="mb-4"><label class="fw-bold mb-1">Password</label><input type="password" class="form-control rounded-0" id="password" required></div>
+            <input type="hidden" id="auth-mode" value="login">
+            <button type="submit" id="submit-auth-btn" class="btn btn-ups rounded-0 w-100">Sign In</button>
+            <p class="mt-3 text-center"><a href="#" id="toggle-auth" class="text-decoration-none fw-bold" style="color:var(--ups-blue)">Need an account? Sign Up</a></p>
+        </form>
+    </div>
+</div>
+
+<!-- TICKET THREAD MODAL -->
+<div class="modal fade" id="ticketThreadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-0">
+            <div class="modal-header border-0 bg-light">
+                <h5 class="modal-title fw-bold" style="color:var(--ups-brown)"><span class="material-symbols-rounded align-middle me-2">forum</span>Ticket Thread</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0 d-flex flex-column" style="height: 60vh;">
+                <div class="bg-white p-3 border-bottom d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1 fw-bold" id="thread-subject">Subject</h5>
+                        <div class="small text-muted" id="thread-customer">Customer Info</div>
+                    </div>
+                    <div>
+                        <select class="form-select form-select-sm rounded-0" id="thread-status" onchange="updateTicketStatus(this.value)">
+                            <option value="open">Open</option>
+                            <option value="pending">Pending</option>
+                            <option value="resolved">Resolved</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex-grow-1 overflow-auto p-4 bg-light" id="thread-messages">
+                    <!-- Messages injected here -->
+                </div>
+                
+                <div class="p-3 border-top bg-white">
+                    <form id="reply-form" onsubmit="addTicketReply(event)">
+                        <input type="hidden" id="reply-ticket-id">
+                        <div class="input-group">
+                            <select class="form-select" id="reply-type" style="max-width: 150px;">
+                                <option value="admin">Public Reply</option>
+                                <option value="internal">Internal Note</option>
+                            </select>
+                            <input type="text" class="form-control" id="reply-message" placeholder="Type your reply..." required>
+                            <button type="submit" class="btn btn-ups fw-bold px-4" id="reply-btn">Send</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+    let globalShipments = [];
+    let globalPayments = [];
+    let globalSupportTickets = [];
+    let currentShipmentStatus = '';
+
+    // ==========================================
+    // NOTIFICATIONS (TOASTS)
+    // ==========================================
+    function showToast(message) {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = 'toast-custom';
+        toast.innerHTML = `<div class="d-flex align-items-center gap-2"><span class="material-symbols-rounded">info</span>${message}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 5000);
+    }
+    
+    // Set up Realtime Subscriptions
+    document.addEventListener('DOMContentLoaded', () => {
+        window.supabase
+            .channel('admin-notifications')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'notifications_log' },
+                (payload) => {
+                    const alert = payload.new;
+                    showToast(`<strong>${alert.title}</strong><br><span style="font-size:0.85em">${alert.body}</span>`);
+                    
+                    // Auto-refresh views if applicable
+                    if ((alert.event_type === 'payment_submitted' || alert.event_type === 'bank_account_requested') && document.getElementById('payments-view').classList.contains('active')) {
+                        showPaymentsView();
+                    }
+                    if (document.getElementById('dashboard-view').classList.contains('active')) {
+                        showDashboard();
+                    }
+                }
+            )
+            .subscribe();
+    });
+
+    // ==========================================
+    // ROUTING & VIEWS
+    // ==========================================
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+        
+        document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(el => el.classList.remove('active'));
+        if(viewId === 'dashboard-view') {
+            document.querySelectorAll('.nav-item')[0].classList.add('active');
+            document.querySelectorAll('.bottom-nav-item')[0].classList.add('active');
+            document.getElementById('desktop-header-title').textContent = "Shipment Overview";
+        } else if (viewId === 'form-view') {
+            document.querySelectorAll('.nav-item')[1].classList.add('active');
+            document.querySelectorAll('.bottom-nav-item')[1].classList.add('active');
+            document.getElementById('desktop-header-title').textContent = document.getElementById('form-title').textContent;
+        } else if (viewId === 'success-view') {
+            document.getElementById('desktop-header-title').textContent = "Success";
+        } else if (viewId === 'accounts-view') {
+            document.getElementById('nav-accounts')?.classList.add('active');
+            document.getElementById('desktop-header-title').textContent = "Payment Accounts";
+        }
+    }
+
+    function copyTracking() {
+        const trackingNum = document.getElementById('success-tracking-number').textContent;
+        navigator.clipboard.writeText(trackingNum).then(() => {
+            showToast("Copied to clipboard!");
+        }).catch(err => {
+            showToast("Failed to copy.");
+        });
+    }
+
+    function showSuccessView(identifier, isDraft = false) {
+        const container = document.getElementById('success-tracking-number');
+        if (isDraft) {
+            document.getElementById('success-title').textContent = 'Draft Shipment Created';
+            document.getElementById('success-label').textContent = 'Receiver Link:';
+            document.getElementById('success-helper-text').classList.remove('d-none');
+            
+            // Make it an actual clickable link so it's completely obvious
+            container.innerHTML = `<a href="${identifier}" target="_blank" class="text-primary" style="text-decoration: underline; font-size: 1.25rem; word-break: break-all; letter-spacing: normal;">${identifier}</a>`;
+        } else {
+            document.getElementById('success-title').textContent = 'Shipment Created Successfully';
+            document.getElementById('success-label').textContent = 'Tracking Number:';
+            document.getElementById('success-helper-text').classList.add('d-none');
+            
+            // Revert to plain text for tracking numbers
+            container.innerHTML = identifier;
+            container.style.fontSize = '';
+            container.style.wordBreak = 'normal';
+        }
+        switchView('success-view');
+    }
+
+    async function init() {
+        const session = await window.db.getSession();
+        if (session) {
+            document.getElementById('login-overlay').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+            showDashboard();
+        } else {
+            document.getElementById('login-overlay').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        }
+    }
+
+    // ==========================================
+    // AUTHENTICATION
+    // ==========================================
+    document.getElementById("toggle-auth").addEventListener("click", (e) => {
+        e.preventDefault();
+        const mode = document.getElementById("auth-mode");
+        const btn = document.getElementById("submit-auth-btn");
+        const title = document.querySelector(".login-logo");
+        
+        if (mode.value === "login") {
+            mode.value = "signup";
+            btn.textContent = "Create Account";
+            title.innerHTML = '<span class="material-symbols-rounded d-block mb-2" style="font-size:3rem;color:var(--ups-yellow)">person_add</span>Admin Registration';
+            e.target.textContent = "Already have an account? Sign In";
+        } else {
+            mode.value = "login";
+            btn.textContent = "Sign In";
+            title.innerHTML = '<span class="material-symbols-rounded d-block mb-2" style="font-size:3rem;color:var(--ups-yellow)">local_shipping</span>Operations Login';
+            e.target.textContent = "Need an account? Sign Up";
+        }
+    });
+
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+        const mode = document.getElementById("auth-mode").value;
+        const btn = document.getElementById("submit-auth-btn");
+        const originalText = btn.textContent;
+        
+        btn.textContent = "Processing...";
+        btn.disabled = true;
+
+        try {
+            if (mode === "signup") {
+                const { data, error } = await window.supabase.auth.signUp({ email, password });
+                if (error) throw error;
+                alert(`Account registered! Row Level Security prevents the frontend from assigning Admin roles. You must manually insert your profile into the 'admins' table in Supabase using this ID: ${data.user.id}`);
+            } else {
+                await window.db.login(email, password);
+                document.getElementById('login-overlay').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                showDashboard();
+                showToast("Logged in successfully");
+            }
+        } catch (err) { 
+            alert(err.message); 
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    async function logout() {
+        await window.db.logout();
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+        document.getElementById("login-form").reset();
+    }
+
+    // ==========================================
+    // DASHBOARD & DATA RENDERING
+    // ==========================================
+    function getStatusClass(status) {
+        if(status === 'Pending' || status === 'Picked Up') return 'badge-pending';
+        if(status === 'In Transit' || status === 'Out For Delivery') return 'badge-transit';
+        if(status === 'Delivered') return 'badge-delivered';
+        return 'badge-custom';
+    }
+
+    function renderSkeleton() {
+        const desktopTbody = document.getElementById('desktop-tbody');
+        const mobileList = document.getElementById('mobile-list');
+        
+        let dHtml = '';
+        for(let i=0; i<3; i++) {
+            dHtml += `<tr>
+                <td><div class="skeleton skeleton-text"></div></td>
+                <td><div class="skeleton skeleton-text" style="width:70%"></div></td>
+                <td><div class="skeleton" style="height:1.5rem;width:80px"></div></td>
+                <td><div class="skeleton skeleton-text" style="width:90%"></div></td>
+                <td><div class="skeleton skeleton-text" style="width:50%"></div></td>
+                <td><div class="skeleton skeleton-text" style="width:60%"></div></td>
+            </tr>`;
+        }
+        desktopTbody.innerHTML = dHtml;
+
+        let mHtml = '';
+        for(let i=0; i<3; i++) {
+            mHtml += `<div class="shipment-card">
+                <div class="skeleton" style="height:1.5rem;width:50%;margin-bottom:0.5rem"></div>
+                <div class="skeleton skeleton-text"></div>
+                <div class="skeleton" style="height:2rem;width:100px;margin-top:1rem"></div>
+            </div>`;
+        }
+        mobileList.innerHTML = mHtml;
+    }
+
+    async function showDashboard() {
+        switchView("dashboard-view");
+        renderSkeleton();
+        
+        try {
+            globalShipments = await window.db.getAllShipments();
+            
+            document.getElementById("stat-total").textContent = globalShipments.length;
+            document.getElementById("stat-pending").textContent = globalShipments.filter(s => s.status === "Pending" || s.status === "Picked Up").length;
+            document.getElementById("stat-transit").textContent = globalShipments.filter(s => s.status === "In Transit" || s.status === "Out For Delivery").length;
+            document.getElementById("stat-delivered").textContent = globalShipments.filter(s => s.status === "Delivered").length;
+
+            filterTable();
+        } catch (err) {
+            showToast("Error loading data: " + err.message);
+            document.getElementById("desktop-tbody").innerHTML = `<tr><td colspan="6" class="text-center text-danger p-4">Error loading shipments: ${err.message}</td></tr>`;
+            document.getElementById("mobile-list").innerHTML = `<div class="p-4 text-center border text-danger bg-white"><strong>Error loading shipments:</strong><br>${err.message}</div>`;
+        }
+    }
+
+    async function showSupportView() {
+        switchView("support-view");
+        
+        try {
+            const { data, error } = await window.supabase
+                .from('support_tickets')
+                .select('*, shipments(tracking_number)')
+                .order('created_at', { ascending: false });
+                
+            if (error) throw error;
+            globalSupportTickets = data;
+            
+            document.getElementById("stat-support-open").textContent = globalSupportTickets.filter(t => t.status === 'open').length;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("stat-support-resolved").textContent = globalSupportTickets.filter(t => t.status === 'resolved' && t.updated_at.startsWith(today)).length;
+
+            filterSupportTable();
+        } catch (err) {
+            showToast("Error loading tickets: " + err.message);
+        }
+    }
+
+    function filterSupportTable() {
+        const tbody = document.getElementById("support-tbody");
+        const searchQuery = document.getElementById("search-support-input").value.toLowerCase();
+        const statusFilter = document.getElementById("filter-support-status").value;
+
+        let filtered = globalSupportTickets.filter(t => {
+            const tracking = (t.shipments?.tracking_number || "").toLowerCase();
+            const subject = (t.subject || "").toLowerCase();
+            const customer = (t.sender_name || "").toLowerCase();
+            const matchesSearch = tracking.includes(searchQuery) || subject.includes(searchQuery) || customer.includes(searchQuery);
+            const matchesStatus = statusFilter === "All" || t.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">No tickets found.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = "";
+        filtered.forEach(t => {
+            const tracking = t.shipments?.tracking_number || "Unknown";
+            
+            let statusBadge = '';
+            if (t.status === 'open') statusBadge = '<span class="badge bg-danger">Open</span>';
+            else if (t.status === 'resolved') statusBadge = '<span class="badge bg-success">Resolved</span>';
+            else statusBadge = `<span class="badge bg-warning text-dark text-capitalize">${t.status}</span>`;
+
+            let priorityBadge = '';
+            if (t.priority === 'urgent') priorityBadge = '<span class="badge bg-danger">Urgent</span>';
+            else if (t.priority === 'high') priorityBadge = '<span class="badge bg-warning text-dark">High</span>';
+            else priorityBadge = `<span class="badge bg-secondary text-capitalize">${t.priority}</span>`;
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="fw-bold">${t.subject}</td>
+                <td>${tracking}</td>
+                <td>
+                    <div class="fw-bold">${t.sender_name}</div>
+                    <div class="small text-muted">${t.sender_email}</div>
+                </td>
+                <td>${statusBadge}</td>
+                <td>${priorityBadge}</td>
+                <td>
+                    <button class="btn btn-sm btn-outline-ups rounded-0 px-2" onclick="openTicketThread('${t.id}')">View Thread</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function openTicketThread(ticketId) {
+        const ticket = globalSupportTickets.find(t => t.id === ticketId);
+        if (!ticket) return;
+
+        document.getElementById('thread-subject').textContent = ticket.subject;
+        document.getElementById('thread-customer').textContent = `${ticket.sender_name} (${ticket.sender_email}) | Tracking: ${ticket.shipments?.tracking_number || 'N/A'}`;
+        document.getElementById('thread-status').value = ticket.status;
+        document.getElementById('reply-ticket-id').value = ticketId;
+        
+        const messagesContainer = document.getElementById('thread-messages');
+        messagesContainer.innerHTML = '<div class="text-center text-muted mt-5">Loading thread...</div>';
+        
+        const modal = new bootstrap.Modal(document.getElementById('ticketThreadModal'));
+        modal.show();
+
+        try {
+            const { data: replies, error } = await window.supabase
+                .from('ticket_replies')
+                .select('*')
+                .eq('ticket_id', ticketId)
+                .order('created_at', { ascending: true });
+                
+            if (error) throw error;
+            
+            messagesContainer.innerHTML = '';
+            
+            if (!replies || replies.length === 0) {
+                messagesContainer.innerHTML = '<div class="text-center text-muted mt-5">No messages in this thread yet.</div>';
+                return;
+            }
+
+            replies.forEach(r => {
+                const isInternal = r.sender_type === 'internal';
+                const isAdmin = r.sender_type === 'admin' || isInternal;
+                const date = new Date(r.created_at).toLocaleString();
+                
+                const bubbleClass = isInternal ? 'bg-warning bg-opacity-25 border-warning' : (isAdmin ? 'bg-white border' : 'bg-ups-yellow border-ups-yellow');
+                const alignClass = isAdmin ? 'ms-auto' : 'me-auto';
+                const senderName = isInternal ? 'Internal Note (Hidden from customer)' : (isAdmin ? 'Support Agent' : ticket.sender_name);
+                
+                const div = document.createElement('div');
+                div.className = `card mb-3 border rounded-3 w-75 ${alignClass} ${bubbleClass}`;
+
+                // Parse [ATTACHMENT](url) into inline images
+                let msgContent = r.message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                msgContent = msgContent.replace(
+                    /\[ATTACHMENT\]\((.*?)\)/g,
+                    '<br><a href="$1" target="_blank"><img src="$1" style="max-width:100%; max-height:200px; margin-top:10px; border-radius:8px; border:1px solid #ddd; object-fit:contain;" alt="Attachment"></a>'
+                );
+
+                div.innerHTML = `
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <strong class="small ${isInternal ? 'text-danger' : ''}">${senderName}</strong>
+                            <small class="text-muted" style="font-size:0.75rem">${date}</small>
+                        </div>
+                        <p class="mb-0" style="white-space: pre-wrap;">${msgContent}</p>
+                    </div>
+                `;
+                messagesContainer.appendChild(div);
+            });
+            
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+        } catch (err) {
+            messagesContainer.innerHTML = `<div class="text-danger text-center mt-5">Error: ${err.message}</div>`;
+        }
+    }
+
+    async function addTicketReply(e) {
+        e.preventDefault();
+        const btn = document.getElementById('reply-btn');
+        const input = document.getElementById('reply-message');
+        const type = document.getElementById('reply-type').value;
+        const ticketId = document.getElementById('reply-ticket-id').value;
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        btn.disabled = true;
+        
+        try {
+            const { error } = await window.supabase
+                .from('ticket_replies')
+                .insert([{
+                    ticket_id: ticketId,
+                    sender_type: type,
+                    message: msg
+                }]);
+                
+            if (error) throw error;
+            
+            input.value = '';
+            // Refresh thread
+            openTicketThread(ticketId);
+        } catch (err) {
+            showToast("Error sending reply: " + err.message);
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function updateTicketStatus(newStatus) {
+        const ticketId = document.getElementById('reply-ticket-id').value;
+        try {
+            const { error } = await window.supabase
+                .from('support_tickets')
+                .update({ status: newStatus, updated_at: new Date().toISOString() })
+                .eq('id', ticketId);
+                
+            if (error) throw error;
+            showToast("Status updated to " + newStatus);
+            
+            // Update local state and refresh table in background
+            const t = globalSupportTickets.find(x => x.id === ticketId);
+            if (t) t.status = newStatus;
+            filterSupportTable();
+        } catch (err) {
+            showToast("Error updating status: " + err.message);
+        }
+    }
+    async function showPaymentsView() {
+        switchView("payments-view");
+        
+        try {
+            const { data: payments, error: pError } = await window.supabase
+                .from('payments')
+                .select('*, shipments(tracking_number), receivers(full_name, email, phone)')
+                .order('created_at', { ascending: false });
+                
+            if (pError) throw pError;
+            
+            const { data: requests, error: rError } = await window.supabase
+                .from('bank_account_requests')
+                .select('*, shipments(tracking_number, shipping_fee), receivers(full_name, email, phone)')
+                .order('created_at', { ascending: false });
+                
+            if (rError) throw rError;
+            
+            // Map bank requests to match payment structure
+            const mappedRequests = requests.map(r => ({
+                is_bank_request: true,
+                id: r.id,
+                shipment_id: r.shipment_id,
+                amount: r.shipments?.shipping_fee || 0,
+                payment_method: 'bank_account_request',
+                status: r.status, // pending, assigned, sent
+                created_at: r.created_at,
+                shipments: r.shipments,
+                receivers: r.receivers,
+                assigned_bank_account_id: r.assigned_bank_account_id
+            }));
+
+            // Augment payments with assigned bank account info where applicable
+            payments.forEach(p => {
+                if (p.payment_method === 'Bank Transfer') {
+                    const req = requests.find(r => r.shipment_id === p.shipment_id);
+                    if (req && req.assigned_bank_account_id) {
+                        p.assigned_bank_account_id = req.assigned_bank_account_id;
+                    }
+                }
+            });
+
+            globalPayments = [...payments, ...mappedRequests].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            
+            const total = globalPayments.filter(p => p.status === 'verified' && !p.is_bank_request).reduce((sum, p) => sum + Number(p.amount), 0);
+            document.getElementById("stat-payments-total").textContent = `$${total.toFixed(2)}`;
+            const pendingCount = globalPayments.filter(p => p.status === 'pending_verification' || p.status === 'pending').length;
+            document.getElementById("stat-payments-pending").textContent = pendingCount;
+
+            filterPaymentsTable();
+        } catch (err) {
+            showToast("Error loading payments: " + err.message);
+        }
+    }
+
+    function filterPaymentsTable() {
+        const tbody = document.getElementById("payments-tbody");
+        const mobileList = document.getElementById("mobile-payments-list");
+        const searchQuery = document.getElementById("search-payments-input").value.toLowerCase();
+        const statusFilter = document.getElementById("filter-payment-status").value;
+
+        let filtered = globalPayments.filter(p => {
+            const tracking = (p.shipments?.tracking_number || "").toLowerCase();
+            const customer = (p.receivers?.full_name || "").toLowerCase();
+            const matchesSearch = tracking.includes(searchQuery) || customer.includes(searchQuery);
+            const matchesStatus = statusFilter === "All" || p.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+
+        tbody.innerHTML = "";
+        mobileList.innerHTML = "";
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center p-4 text-muted">No payments found.</td></tr>`;
+            mobileList.innerHTML = `<div class="p-4 text-center text-muted border bg-white">No payments found.</div>`;
+            return;
+        }
+
+        filtered.forEach(p => {
+            const date = new Date(p.created_at).toLocaleDateString();
+            const tracking = p.shipments?.tracking_number || "Unknown";
+            const customer = p.receivers?.full_name || "Unknown";
+            
+            let statusBadge = '';
+            if (p.is_bank_request) {
+                if (p.status === 'pending') statusBadge = '<span class="badge bg-warning text-dark">Pending Assignment</span>';
+                else if (p.status === 'assigned') statusBadge = '<span class="badge bg-info text-dark">Assigned</span>';
+                else if (p.status === 'sent') statusBadge = '<span class="badge bg-primary">Sent</span>';
+                else statusBadge = `<span class="badge bg-secondary">${p.status}</span>`;
+            } else {
+                if (p.status === 'verified') statusBadge = '<span class="badge bg-success">Approved</span>';
+                else if (p.status === 'pending_verification') statusBadge = '<span class="badge bg-warning text-dark">Pending Review</span>';
+                else statusBadge = `<span class="badge bg-danger">${p.status}</span>`;
+            }
+
+            let paymentInfo = '';
+            if (p.receipt_url) paymentInfo = `<a href="${p.receipt_url}" target="_blank" class="btn btn-sm btn-info rounded-0 px-2 text-white">Receipt</a>`;
+            else if (p.payment_details) paymentInfo = `<button class="btn btn-sm btn-info rounded-0 px-2 text-white" onclick="alert('${p.payment_details}')">Details</button>`;
+            
+            if (!p.is_bank_request && p.assigned_bank_account_id) {
+                paymentInfo += `<button class="btn btn-sm btn-secondary rounded-0 px-2 ms-1 text-white" onclick="alert('Expected Bank Account ID:\\n${p.assigned_bank_account_id}')">Account Info</button>`;
+            }
+            
+            // Add contact info for bank request
+            if (p.is_bank_request) {
+                let contactInfo = [];
+                if (p.receivers?.email) contactInfo.push(p.receivers.email);
+                if (p.receivers?.phone) contactInfo.push(p.receivers.phone);
+                if (contactInfo.length > 0) {
+                    paymentInfo += `<button class="btn btn-sm btn-secondary rounded-0 px-2 ms-1 text-white" onclick="alert('Contact: ${contactInfo.join(', ')}')">Contact Info</button>`;
+                }
+            }
+
+            let actionBtns = '';
+            let mobileActionBtns = '';
+            
+            if (p.is_bank_request) {
+                if (p.status === 'pending') {
+                    actionBtns = `
+                        ${paymentInfo}
+                        <button class="btn btn-sm btn-warning text-dark rounded-0 px-2 ms-1" onclick="openAssignAccountModal('${p.id}')">Assign Account</button>
+                    `;
+                    mobileActionBtns = `
+                        <div class="d-flex gap-2 mt-2">
+                            ${paymentInfo}
+                            <button class="btn btn-sm btn-warning text-dark rounded-0 flex-grow-1" onclick="openAssignAccountModal('${p.id}')">Assign Account</button>
+                        </div>
+                    `;
+                } else {
+                    actionBtns = `
+                        ${paymentInfo}
+                        <button class="btn btn-sm btn-secondary rounded-0 px-2 ms-1" disabled>Assign Account</button>
+                    `;
+                    mobileActionBtns = `
+                        <div class="d-flex gap-2 mt-2">
+                            ${paymentInfo}
+                            <button class="btn btn-sm btn-secondary rounded-0 flex-grow-1" disabled>Assign Account</button>
+                        </div>
+                    `;
+                }
+            } else if (p.status === 'pending_verification') {
+                actionBtns = `
+                    ${paymentInfo}
+                    <button class="btn btn-sm btn-success rounded-0 px-2 ms-1" onclick="approvePayment('${p.shipment_id}')">Approve</button>
+                    <button class="btn btn-sm btn-danger rounded-0 px-2 ms-1" onclick="rejectPayment('${p.shipment_id}')">Reject</button>
+                `;
+                mobileActionBtns = `
+                    <div class="d-flex gap-2 mt-2">
+                        ${paymentInfo}
+                        <button class="btn btn-sm btn-success rounded-0 flex-grow-1" onclick="approvePayment('${p.shipment_id}')">Approve</button>
+                        <button class="btn btn-sm btn-danger rounded-0 flex-grow-1" onclick="rejectPayment('${p.shipment_id}')">Reject</button>
+                    </div>
+                `;
+            } else {
+                actionBtns = paymentInfo;
+                if (paymentInfo) {
+                    mobileActionBtns = `<div class="mt-2">${paymentInfo}</div>`;
+                }
+            }
+
+            // Desktop Row
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td>
+                    <div class="fw-bold">${tracking}</div>
+                    <div class="small text-muted">${customer}</div>
+                </td>
+                <td class="text-capitalize">${p.payment_method?.replace('_', ' ') || 'N/A'}</td>
+                <td class="fw-bold">$${Number(p.amount).toFixed(2)}</td>
+                <td>${date}</td>
+                <td>${statusBadge}</td>
+                <td>${actionBtns}</td>
+            `;
+            tbody.appendChild(tr);
+            
+            // Mobile Card
+            const card = document.createElement("div");
+            card.className = "shipment-card";
+            card.style.borderLeftColor = p.status === 'verified' ? 'var(--status-delivered-bg)' : (p.status === 'pending_verification' ? 'var(--status-pending-bg)' : 'red');
+            card.innerHTML = `
+                <div class="shipment-card-header">
+                    <span class="fw-bold">${tracking}</span>
+                    <span>${statusBadge}</span>
+                </div>
+                <div>
+                    <div class="fw-bold mb-1">$${Number(p.amount).toFixed(2)} <span class="text-muted fw-normal">(${p.payment_method?.replace('_', ' ') || 'N/A'})</span></div>
+                    <div class="small text-muted mb-1"><span class="material-symbols-rounded align-middle fs-6 me-1">person</span>${customer}</div>
+                    <div class="small text-muted"><span class="material-symbols-rounded align-middle fs-6 me-1">calendar_today</span>${date}</div>
+                </div>
+                ${mobileActionBtns}
+            `;
+            mobileList.appendChild(card);
+        });
+    }
+
+
+    function filterTable() {
+        const desktopTbody = document.getElementById("desktop-tbody");
+        const mobileList = document.getElementById("mobile-list");
+        
+        const searchQuery = document.getElementById("search-input").value.toLowerCase();
+        const statusFilter = document.getElementById("filter-status").value;
+        const sortOrder = document.getElementById("sort-order").value;
+
+        let filtered = globalShipments.filter(s => {
+            const senderName = s.senders?.full_name || '';
+            const matchesSearch = s.tracking_number.toLowerCase().includes(searchQuery) || 
+                                  senderName.toLowerCase().includes(searchQuery);
+            const matchesStatus = statusFilter === "All" || s.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+
+        filtered.sort((a, b) => {
+            const dateA = new Date(a.created_at).getTime();
+            const dateB = new Date(b.created_at).getTime();
+            return sortOrder === "newest" ? dateB - dateA : dateA - dateB;
+        });
+
+        if(filtered.length === 0) {
+            const emptyHtml = `
+                <div class="text-center p-5 text-muted">
+                    <span class="material-symbols-rounded d-block mx-auto mb-3" style="font-size:3rem;opacity:0.5">search_off</span>
+                    <p class="fw-bold">No shipments found matching your criteria.</p>
+                </div>
+            `;
+            desktopTbody.innerHTML = `<tr><td colspan="6">${emptyHtml}</td></tr>`;
+            mobileList.innerHTML = emptyHtml;
+            return;
+        }
+
+        desktopTbody.innerHTML = "";
+        mobileList.innerHTML = "";
+
+        filtered.forEach(s => {
+            const date = new Date(s.created_at).toLocaleDateString();
+            const destination = `${s.receivers?.city || ""}, ${s.receivers?.country || ""}`;
+            const originCity = s.senders?.city || "Unknown";
+            const destCity = s.receivers?.city || "Unknown";
+            const senderName = s.senders?.full_name || "N/A";
+            const badgeClass = getStatusClass(s.status);
+            
+            // Desktop
+            let actionBtns = `
+                <button class="btn btn-sm btn-outline-ups rounded-0 px-3" onclick="editShipment('${s.tracking_number}')">Edit</button>
+                <button class="btn btn-sm btn-danger rounded-0 px-2 ms-1" onclick="deleteShipment('${s.id}')"><span class="material-symbols-rounded align-middle" style="font-size:1rem">delete</span></button>
+            `;
+            let paymentInfo = '';
+            if (s.payment_receipt_url) {
+                paymentInfo = `<a href="${s.payment_receipt_url}" target="_blank" class="btn btn-sm btn-info rounded-0 px-2 ms-1 text-white">Receipt</a>`;
+            } else if (s.payment_details) {
+                paymentInfo = `<button class="btn btn-sm btn-info rounded-0 px-2 ms-1 text-white" onclick="alert('${s.payment_details}')">Details</button>`;
+            }
+
+            if (s.payment_status === 'pending_verification') {
+                actionBtns = `
+                    ${paymentInfo}
+                    <button class="btn btn-sm btn-success rounded-0 px-2 ms-1" onclick="approvePayment('${s.id}')">Approve</button>
+                    <button class="btn btn-sm btn-danger rounded-0 px-2 ms-1" onclick="rejectPayment('${s.id}')">Reject</button>
+                    ${actionBtns}
+                `;
+            }
+
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+                <td class="fw-bold">${s.tracking_number}</td>
+                <td>${senderName}</td>
+                <td><span class="badge-custom ${badgeClass}">${s.status}</span></td>
+                <td>${destination}</td>
+                <td>${date}</td>
+                <td>${actionBtns}</td>
+            `;
+            desktopTbody.appendChild(tr);
+
+            // Mobile Card
+            const card = document.createElement("div");
+            card.className = "shipment-card";
+            card.innerHTML = `
+                <!-- 1. Tracking & Status -->
+                <div class="shipment-card-header" style="border-bottom:none; padding-bottom:0;">
+                    <div class="fw-bold text-dark fs-5 mb-1" style="word-break: break-all;">${s.tracking_number}</div>
+                    <span class="badge-custom ${badgeClass}" style="border-radius:24px; padding:6px 12px; font-weight:bold;">${s.status}</span>
+                </div>
+                
+                <!-- 2. Route -->
+                <div class="shipment-card-route mt-2 mb-2 d-flex align-items-center" style="font-size:1rem; flex-wrap: wrap;">
+                    <span class="fw-bold text-dark">${originCity}</span>
+                    <span class="material-symbols-rounded mx-2 text-ups-yellow" style="font-size:1.2rem;">arrow_right_alt</span>
+                    <span class="fw-bold text-dark">${destCity}</span>
+                </div>
+                
+                <!-- 3. Sender/Receiver -->
+                <div class="shipment-card-meta mb-1">
+                    <span class="material-symbols-rounded align-middle me-1" style="font-size:1rem;">person</span>
+                    <strong>Customer:</strong> ${senderName}
+                </div>
+                
+                <!-- 4. Last Updated -->
+                <div class="shipment-card-meta mb-3">
+                    <span class="material-symbols-rounded align-middle me-1" style="font-size:1rem;">calendar_today</span>
+                    <strong>Last Updated:</strong> ${date}
+                </div>
+                
+                <!-- 5. Relevant Actions -->
+                <div class="d-flex gap-2">
+                    <button class="btn btn-ups" style="min-height: 48px; border-radius: 24px; font-weight: bold; flex-grow: 1;" onclick="editShipment('${s.tracking_number}')">View Shipment</button>
+                    ${s.payment_status === 'pending_verification' ? `<button class="btn btn-warning" style="min-height: 48px; border-radius: 24px; font-weight: bold;" onclick="approvePayment('${s.id}')"><span class="material-symbols-rounded align-middle">receipt_long</span></button>` : ''}
+                </div>
+            `;
+            mobileList.appendChild(card);
+        });
+    }
+
+    // ==========================================
+    // CREATE / EDIT / DELETE
+    // ==========================================
+    async function generateTracking() {
+        const countryInput = document.getElementById('sender_country') ? document.getElementById('sender_country').value : '';
+        const code = (countryInput && countryInput.length >= 2) ? countryInput.substring(0,2).toUpperCase() : 'US';
+        document.getElementById('tracking_number').value = 'Generating...';
+        document.getElementById('tracking_number').value = await window.db.generateUniqueTrackingNumber(code);
+    }
+
+    let currentWorkflow = 'manual';
+
+    function showCreateView() {
+        switchView('choice-view');
+    }
+
+    function startWorkflow(workflowType) {
+        currentWorkflow = workflowType;
+        document.getElementById('form-title').textContent = workflowType === 'link' ? 'Request Receiver Info' : 'Create Shipment';
+        document.getElementById('shipment-form').reset();
+        document.getElementById('shipment_id').value = '';
+        document.getElementById('generate-btn').style.display = 'block';
+        document.getElementById('event-help-text').textContent = 'This location will be used to log the initial event.';
+        document.getElementById('form-error').style.display = 'none';
+        
+        // Toggle Receiver Section
+        const receiverSection = document.getElementById('receiver-section');
+        if (receiverSection) {
+            receiverSection.style.display = workflowType === 'link' ? 'none' : 'block';
+            
+            // Toggle required attributes for receiver inputs
+            const receiverInputs = receiverSection.querySelectorAll('input');
+            const requiredFields = ['receiver_name', 'receiver_address', 'receiver_city', 'receiver_country', 'receiver_postal'];
+            
+            receiverInputs.forEach(input => {
+                if (requiredFields.includes(input.id)) {
+                    if (workflowType === 'link') {
+                        input.removeAttribute('required');
+                    } else {
+                        input.setAttribute('required', 'required');
+                    }
+                }
+            });
+        }
+
+        if (workflowType === 'link') {
+            document.getElementById('tracking_number').value = 'Pending Receiver...';
+            document.getElementById('generate-btn').style.display = 'none';
+        } else {
+            generateTracking();
+        }
+        
+        currentShipmentStatus = '';
+        switchView('form-view');
+    }
+
+    async function editShipment(trackingNumber) {
+        document.getElementById('form-title').textContent = 'Edit Shipment';
+        document.getElementById('generate-btn').style.display = 'none';
+        document.getElementById('event-help-text').textContent = 'Changing the status above will automatically log a new event. Specify where it happened here.';
+        document.getElementById('form-error').style.display = 'none';
+        
+        switchView('form-view');
+        const shipment = globalShipments.find(s => s.tracking_number === trackingNumber);
+        if(!shipment) return;
+
+        document.getElementById('shipment_id').value = shipment.id;
+        document.getElementById('tracking_number').value = shipment.tracking_number;
+        // Sender Data
+        document.getElementById('sender_name').value = shipment.senders?.full_name || '';
+        document.getElementById('sender_email').value = shipment.senders?.email || '';
+        document.getElementById('sender_phone').value = shipment.senders?.phone || '';
+        document.getElementById('sender_address').value = shipment.senders?.address || '';
+        document.getElementById('sender_city').value = shipment.senders?.city || '';
+        document.getElementById('sender_country').value = shipment.senders?.country || '';
+        document.getElementById('sender_postal').value = shipment.senders?.postal_code || '';
+
+        // Receiver Data
+        document.getElementById('receiver_name').value = shipment.receivers?.full_name || '';
+        document.getElementById('receiver_email').value = shipment.receivers?.email || '';
+        document.getElementById('receiver_phone').value = shipment.receivers?.phone || '';
+        document.getElementById('receiver_address').value = shipment.receivers?.address || '';
+        document.getElementById('receiver_city').value = shipment.receivers?.city || '';
+        document.getElementById('receiver_country').value = shipment.receivers?.country || '';
+        document.getElementById('receiver_postal').value = shipment.receivers?.postal_code || '';
+        
+        // Package Data
+        document.getElementById('package_weight').value = shipment.packages?.weight || '';
+        document.getElementById('package_length').value = shipment.packages?.length || '';
+        document.getElementById('package_width').value = shipment.packages?.width || '';
+        document.getElementById('package_height').value = shipment.packages?.height || '';
+        document.getElementById('package_value').value = shipment.packages?.declared_value || '';
+        document.getElementById('package_description').value = shipment.packages?.description || '';
+        if (shipment.packages?.package_type) {
+            document.getElementById('package_type').value = shipment.packages.package_type;
+        }
+
+        // Logistics Data
+        if (shipment.shipping_method) document.getElementById('shipping_method').value = shipment.shipping_method;
+        if (shipment.billing_party) document.getElementById('billing_party').value = shipment.billing_party;
+        document.getElementById('customer_reference').value = shipment.customer_reference || '';
+        document.getElementById('origin_facility').value = shipment.origin_facility || '';
+        document.getElementById('destination_facility').value = shipment.destination_facility || '';
+
+        document.getElementById('status').value = shipment.status;
+        
+        // Ensure date is in YYYY-MM-DD format for the native date picker
+        let dateVal = shipment.estimated_delivery;
+        if(dateVal && dateVal.includes(' ')) {
+             // Basic fallback if old data was stored as a string
+             dateVal = ''; 
+        }
+        document.getElementById('estimated_delivery').value = dateVal || '';
+        
+        currentShipmentStatus = shipment.status;
+    }
+
+    document.getElementById('shipment-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorBox = document.getElementById('form-error');
+        errorBox.style.display = 'none';
+
+        const id = document.getElementById('shipment_id').value;
+        const status = document.getElementById('status').value;
+        const btn = document.getElementById('save-btn');
+        const originalText = btn.textContent;
+        
+        // Basic custom validation (beyond HTML5)
+        const email = document.getElementById('sender_email').value;
+        if(email && !email.includes('@')) {
+            errorBox.textContent = "Please enter a valid sender email address.";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        const phone = document.getElementById('sender_phone').value;
+        if(phone && !/^[0-9+\-\s()]+$/.test(phone)) {
+            errorBox.textContent = "Please enter a valid sender phone number (digits and standard symbols only).";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        const rawWeight = document.getElementById('package_weight').value;
+        if (isNaN(parseFloat(rawWeight)) || parseFloat(rawWeight) <= 0) {
+            errorBox.textContent = "Package weight must be a number greater than 0.";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        const estDelivery = document.getElementById('estimated_delivery').value;
+        const selectedDate = new Date(estDelivery);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to midnight for accurate day comparison
+
+        if (selectedDate < today) {
+            errorBox.textContent = "Estimated delivery date cannot be in the past.";
+            errorBox.style.display = 'block';
+            return;
+        }
+
+        btn.textContent = "Creating Shipment...";
+        btn.disabled = true;
+
+        const payload = {
+            workflow: currentWorkflow,
+            tracking_number: document.getElementById('tracking_number').value,
+            status: currentWorkflow === 'link' ? 'Draft' : status,
+            estimated_delivery: document.getElementById('estimated_delivery').value,
+            shipping_fee: document.getElementById('shipping_fee').value ? parseFloat(document.getElementById('shipping_fee').value) : 0,
+            shipping_method: document.getElementById('shipping_method').value,
+            billing_party: document.getElementById('billing_party').value,
+            customer_reference: document.getElementById('customer_reference').value,
+            origin_facility: document.getElementById('origin_facility').value,
+            destination_facility: document.getElementById('destination_facility').value,
+            
+            sender: {
+                full_name: document.getElementById('sender_name').value,
+                email: email,
+                phone: phone,
+                address: document.getElementById('sender_address').value,
+                city: document.getElementById('sender_city').value,
+                country: document.getElementById('sender_country').value,
+                postal_code: document.getElementById('sender_postal').value
+            },
+            receiver: currentWorkflow === 'link' ? null : {
+                full_name: document.getElementById('receiver_name').value,
+                email: document.getElementById('receiver_email').value,
+                phone: document.getElementById('receiver_phone').value,
+                address: document.getElementById('receiver_address').value,
+                city: document.getElementById('receiver_city').value,
+                country: document.getElementById('receiver_country').value,
+                postal_code: document.getElementById('receiver_postal').value
+            },
+            package: {
+                description: document.getElementById('package_description').value,
+                weight: parseFloat(rawWeight),
+                length: parseFloat(document.getElementById('package_length').value) || 0,
+                width: parseFloat(document.getElementById('package_width').value) || 0,
+                height: parseFloat(document.getElementById('package_height').value) || 0,
+                declared_value: parseFloat(document.getElementById('package_value').value) || 0,
+                package_type: document.getElementById('package_type').value
+            }
+        };
+
+        try {
+            if (id) {
+                await window.db.updateShipment(id, payload);
+                if (status !== currentShipmentStatus || document.getElementById('event_location').value) {
+                    await window.db.addTrackingEvents([{
+                        shipment_id: id,
+                        status: status,
+                        location: document.getElementById('event_location').value || document.getElementById('sender_city').value,
+                        description: `Package status updated to ${status}`
+                    }]);
+                }
+                showToast('Shipment updated successfully!');
+                showDashboard();
+            } else {
+                const newShipment = await window.db.createShipment(payload);
+                if (currentWorkflow === 'manual') {
+                    await window.db.addTrackingEvents([{
+                        shipment_id: newShipment.id,
+                        status: 'Pending',
+                        location: document.getElementById('event_location').value || payload.sender.city,
+                        description: "Shipment created."
+                    }]);
+                    showSuccessView(payload.tracking_number, false);
+                } else {
+                    const baseUrl = window.location.origin;
+                    const link = `${baseUrl}/receiver.html?token=${newShipment.secure_token}`;
+                    showSuccessView(link, true);
+                }
+            }
+        } catch (err) {
+            let msg = err.message || "Unknown error occurred";
+            if (err.code === '23505' || msg.toLowerCase().includes('duplicate')) {
+                msg = "This tracking number already exists. Please click Generate to create a new one.";
+            }
+            document.getElementById('form-error').textContent = "Error saving: " + msg;
+            document.getElementById('form-error').style.display = 'block';
+        } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+        }
+    });
+
+    async function approvePayment(id) {
+        if (confirm("Verify and approve this payment receipt?")) {
+            try {
+                const { error: shipmentError } = await window.supabase
+                    .from('shipments')
+                    .update({ payment_status: 'paid' })
+                    .eq('id', id);
+                if (shipmentError) throw shipmentError;
+
+                await window.supabase
+                    .from('payments')
+                    .update({ status: 'verified' })
+                    .eq('shipment_id', id);
+                
+                await window.db.addTrackingEvents([{
+                    shipment_id: id,
+                    status: 'Pending',
+                    location: 'Operations Center',
+                    description: "Payment verified. Shipment is being processed."
+                }]);
+                
+                await window.supabase.from('notifications_log').insert([{
+                    title: 'Payment Verified',
+                    body: 'Payment verified',
+                    event_type: 'payment_verified',
+                    related_id: id
+                }]);
+                
+                showToast("Payment approved!");
+                if (document.getElementById('payments-view').classList.contains('active')) {
+                    showPaymentsView();
+                } else {
+                    showDashboard();
+                }
+            } catch (err) {
+                showToast("Error approving payment: " + err.message);
+            }
+        }
+    }
+
+    async function rejectPayment(id) {
+        if (confirm("Reject this payment? The receiver will be required to submit a new payment method.")) {
+            try {
+                const { error: shipmentError } = await window.supabase
+                    .from('shipments')
+                    .update({ 
+                        payment_status: 'unpaid',
+                        payment_receipt_url: null,
+                        payment_details: null,
+                        payment_method: null
+                    })
+                    .eq('id', id);
+                if (shipmentError) throw shipmentError;
+
+                await window.supabase
+                    .from('payments')
+                    .update({ status: 'rejected' })
+                    .eq('shipment_id', id);
+                
+                await window.db.addTrackingEvents([{
+                    shipment_id: id,
+                    status: 'Pending',
+                    location: 'Operations Center',
+                    description: "Payment verification failed. Pending new payment."
+                }]);
+                
+                await window.supabase.from('notifications_log').insert([{
+                    title: 'Payment Rejected',
+                    body: 'Payment rejected',
+                    event_type: 'payment_rejected',
+                    related_id: id
+                }]);
+                
+                showToast("Payment rejected.");
+                if (document.getElementById('payments-view').classList.contains('active')) {
+                    showPaymentsView();
+                } else {
+                    showDashboard();
+                }
+            } catch (err) {
+                showToast("Error rejecting payment: " + err.message);
+            }
+        }
+    }
+
+    async function deleteShipment(id) {
+        if (confirm("Permanently delete this shipment and all tracking history?")) {
+            try {
+                await window.db.deleteShipment(id);
+                showToast("Shipment deleted.");
+                showDashboard();
+            } catch (err) {
+                showToast("Error deleting: " + err.message);
+            }
+        }
+    }
+
+
+    // ==========================================
+    // PAYMENT ACCOUNTS MANAGEMENT
+    // ==========================================
+    let globalAccounts = [];
+
+    async function showAccountsView() {
+        switchView('accounts-view');
+        await loadAccounts();
+    }
+
+    async function loadAccounts() {
+        const tbody     = document.getElementById('accounts-tbody');
+        const mobileList = document.getElementById('mobile-accounts-list');
+        tbody.innerHTML     = '<tr><td colspan="7" class="text-center p-4 text-muted"><div class="spinner-border spinner-border-sm text-warning me-2"></div>Loading...</td></tr>';
+        mobileList.innerHTML = '<div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm text-warning me-2"></div>Loading...</div>';
+
+        try {
+            const { data, error } = await window.supabase
+                .from('bank_accounts')
+                .select('id, bank_name, account_name, account_number, account_type, is_active, created_at')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            globalAccounts = data || [];
+
+            tbody.innerHTML = '';
+            mobileList.innerHTML = '';
+
+            if (globalAccounts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center p-4 text-muted">No payment accounts configured.</td></tr>';
+                mobileList.innerHTML = '<div class="p-4 text-center text-muted border bg-white">No payment accounts configured.</div>';
+                return;
+            }
+
+            globalAccounts.forEach(acc => {
+                const date   = new Date(acc.created_at).toLocaleDateString();
+                const badge  = acc.is_active
+                    ? '<span class="badge bg-success">Active</span>'
+                    : '<span class="badge bg-secondary">Inactive</span>';
+                const toggleLabel = acc.is_active ? 'Deactivate' : 'Activate';
+                const toggleClass = acc.is_active ? 'btn-outline-danger' : 'btn-outline-success';
+                const accType = acc.account_type || '—';
+
+                // Desktop row
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${acc.bank_name}</td>
+                        <td>${acc.account_name}</td>
+                        <td class="fw-bold">${acc.account_number}</td>
+                        <td>${accType}</td>
+                        <td>${badge}</td>
+                        <td>${date}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-sm btn-outline-secondary rounded-0" onclick="openEditAccountModal('${acc.id}')">Edit</button>
+                                <button class="btn btn-sm ${toggleClass} rounded-0" onclick="toggleAccountStatus('${acc.id}', ${acc.is_active})">${toggleLabel}</button>
+                            </div>
+                        </td>
+                    </tr>`;
+
+                // Mobile card
+                mobileList.innerHTML += `
+                    <div class="shipment-card">
+                        <div class="d-flex justify-content-between align-items-start mb-1">
+                            <div class="fw-bold">${acc.bank_name}</div>
+                            ${badge}
+                        </div>
+                        <div class="small text-muted mb-1">${acc.account_name}</div>
+                        <div class="small fw-bold mb-1">${acc.account_number}${accType !== '—' ? ' · ' + accType : ''}</div>
+                        <div class="small text-muted mb-3">Added ${date}</div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-outline-secondary rounded-0 flex-grow-1" onclick="openEditAccountModal('${acc.id}')">Edit</button>
+                            <button class="btn btn-sm ${toggleClass} rounded-0 flex-grow-1" onclick="toggleAccountStatus('${acc.id}', ${acc.is_active})">${toggleLabel}</button>
+                        </div>
+                    </div>`;
+            });
+
+        } catch (err) {
+            showToast('Error loading accounts: ' + err.message);
+        }
+    }
+
+    function openAddAccountModal() {
+        document.getElementById('account-modal-title').textContent = 'Add Payment Account';
+        document.getElementById('account-form').reset();
+        document.getElementById('account-edit-id').value = '';
+        document.getElementById('account-modal-error').classList.add('d-none');
+        document.getElementById('account-save-btn').textContent = 'Add Account';
+        new bootstrap.Modal(document.getElementById('accountModal')).show();
+    }
+
+    function openEditAccountModal(id) {
+        const acc = globalAccounts.find(a => a.id === id);
+        if (!acc) return;
+
+        document.getElementById('account-modal-title').textContent = 'Edit Payment Account';
+        document.getElementById('account-edit-id').value  = acc.id;
+        document.getElementById('acc-bank-name').value    = acc.bank_name;
+        document.getElementById('acc-account-name').value = acc.account_name;
+        document.getElementById('acc-account-number').value = acc.account_number;
+        document.getElementById('acc-account-type').value = acc.account_type || '';
+        document.getElementById('acc-is-active').checked  = acc.is_active;
+        document.getElementById('account-modal-error').classList.add('d-none');
+        document.getElementById('account-save-btn').textContent = 'Save Changes';
+        new bootstrap.Modal(document.getElementById('accountModal')).show();
+    }
+
+    async function saveAccount(e) {
+        e.preventDefault();
+        const btn = document.getElementById('account-save-btn');
+        const errBox = document.getElementById('account-modal-error');
+        errBox.classList.add('d-none');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const editId     = document.getElementById('account-edit-id').value;
+        const isActive   = document.getElementById('acc-is-active').checked;
+        const payload = {
+            bank_name:      document.getElementById('acc-bank-name').value.trim(),
+            account_name:   document.getElementById('acc-account-name').value.trim(),
+            account_number: document.getElementById('acc-account-number').value.trim(),
+            account_type:   document.getElementById('acc-account-type').value || null,
+            is_active:      isActive,
+            updated_at:     new Date().toISOString()
+        };
+
+        try {
+            // If activating this account, deactivate all others first
+            if (isActive) {
+                const { error: deactivateError } = await window.supabase
+                    .from('bank_accounts')
+                    .update({ is_active: false, updated_at: new Date().toISOString() })
+                    .neq('id', editId || '00000000-0000-0000-0000-000000000000');
+                if (deactivateError) throw deactivateError;
+            }
+
+            if (editId) {
+                // Update existing
+                const { error } = await window.supabase
+                    .from('bank_accounts')
+                    .update(payload)
+                    .eq('id', editId);
+                if (error) throw error;
+                showToast('Account updated successfully.');
+            } else {
+                // Get current user id for created_by
+                const { data: { user } } = await window.supabase.auth.getUser();
+                payload.created_by = user?.id || null;
+                const { error } = await window.supabase
+                    .from('bank_accounts')
+                    .insert([payload]);
+                if (error) throw error;
+                showToast('Account added successfully.');
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('accountModal'))?.hide();
+            await loadAccounts();
+
+        } catch (err) {
+            errBox.textContent = err.message;
+            errBox.classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = editId ? 'Save Changes' : 'Add Account';
+        }
+    }
+
+    async function toggleAccountStatus(id, currentlyActive) {
+        const action = currentlyActive ? 'deactivate' : 'activate';
+        if (!confirm(`Are you sure you want to ${action} this account?${!currentlyActive ? ' All other accounts will be deactivated.' : ''}`)) return;
+
+        try {
+            if (!currentlyActive) {
+                // Activating: deactivate all others first
+                const { error: deactivateError } = await window.supabase
+                    .from('bank_accounts')
+                    .update({ is_active: false, updated_at: new Date().toISOString() })
+                    .neq('id', id);
+                if (deactivateError) throw deactivateError;
+            }
+
+            const { error } = await window.supabase
+                .from('bank_accounts')
+                .update({ is_active: !currentlyActive, updated_at: new Date().toISOString() })
+                .eq('id', id);
+            if (error) throw error;
+
+            showToast(`Account ${!currentlyActive ? 'activated' : 'deactivated'}.`);
+            await loadAccounts();
+
+        } catch (err) {
+            showToast('Error updating account status: ' + err.message);
+        }
+    }
+
+    async function openAssignAccountModal(requestId) {
+        document.getElementById('assign-request-id').value = requestId;
+        const select = document.getElementById('assign-account-select');
+        select.innerHTML = '<option value="">Loading accounts...</option>';
+        document.getElementById('assign-modal-error').classList.add('d-none');
+        document.getElementById('assign-save-btn').disabled = true;
+        
+        const modalEl = document.getElementById('assignBankAccountModal');
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) modal = new bootstrap.Modal(modalEl);
+        modal.show();
+
+        try {
+            const { data: accounts, error } = await window.supabase
+                .from('bank_accounts')
+                .select('id, bank_name, account_name, account_number')
+                .eq('is_active', true);
+
+            if (error) throw error;
+            
+            select.innerHTML = '<option value="">— Select an active account —</option>';
+            if (accounts && accounts.length > 0) {
+                accounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.id;
+                    opt.textContent = `${acc.bank_name} - ${acc.account_name} (....${String(acc.account_number).slice(-4)})`;
+                    select.appendChild(opt);
+                });
+                document.getElementById('assign-save-btn').disabled = false;
+            } else {
+                select.innerHTML = '<option value="">No active accounts available.</option>';
+            }
+        } catch (err) {
+            document.getElementById('assign-modal-error').textContent = err.message;
+            document.getElementById('assign-modal-error').classList.remove('d-none');
+        }
+    }
+
+    async function submitAccountAssignment(e) {
+        e.preventDefault();
+        const btn = document.getElementById('assign-save-btn');
+        const errBox = document.getElementById('assign-modal-error');
+        errBox.classList.add('d-none');
+        btn.disabled = true;
+        btn.textContent = 'Assigning...';
+
+        const requestId = document.getElementById('assign-request-id').value;
+        const accountId = document.getElementById('assign-account-select').value;
+
+        if (!accountId) {
+            errBox.textContent = 'Please select an account.';
+            errBox.classList.remove('d-none');
+            btn.disabled = false;
+            btn.textContent = 'Send Account to Receiver';
+            return;
+        }
+
+        try {
+            const { error } = await window.supabase
+                .from('bank_account_requests')
+                .update({
+                    assigned_bank_account_id: accountId,
+                    status: 'assigned',
+                    assigned_at: new Date().toISOString()
+                })
+                .eq('id', requestId);
+
+            if (error) throw error;
+
+            showToast('Bank account successfully assigned to the request.');
+            const modalEl = document.getElementById('assignBankAccountModal');
+            bootstrap.Modal.getInstance(modalEl).hide();
+            
+            // Refresh table
+            showPaymentsView();
+
+        } catch (err) {
+            errBox.textContent = err.message;
+            errBox.classList.remove('d-none');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Send Account to Receiver';
+        }
+    }
+
+    init();
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Your Delivery Details</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0" />
+    <style>
+        :root {
+            --ups-brown: #330000;
+            --ups-yellow: #FFB500;
+            --ups-gold: #D4A017;
+            --ups-blue: #008298;
+        }
+        body { font-family: 'Roboto', sans-serif; background-color: #f4f4f4; color: #121212; }
+        .btn-ups { background-color: var(--ups-yellow); color: var(--ups-brown); font-weight: bold; }
+        .btn-ups:hover { background-color: var(--ups-gold); color: var(--ups-brown); }
+        .payment-cards .nav-link {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fff;
+            padding: 1rem;
+            transition: all 0.2s ease;
+        }
+        .payment-cards .nav-link:hover {
+            border-color: var(--ups-yellow);
+        }
+        .payment-cards .nav-link.active {
+            background-color: #fff !important;
+            border-color: var(--ups-brown) !important;
+            color: var(--ups-brown) !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-dark text-white p-3 border-bottom shadow-sm" style="border-bottom-color: var(--ups-yellow) !important; border-bottom-width: 4px !important;">
+        <div class="container d-flex align-items-center">
+            <span class="material-symbols-rounded text-warning me-2" style="font-size: 2rem;">local_shipping</span>
+            <h4 class="mb-0 fw-bold">Delivery Address Form</h4>
+        </div>
+    </header>
+
+    <div class="container mt-5" id="app" style="display: none;">
+        <div class="row justify-content-center">
+            <div class="col-12 col-md-8 col-lg-6">
+                <!-- ERROR STATE -->
+                <div id="error-state" class="card shadow-sm border-0 d-none text-center p-5">
+                    <span class="material-symbols-rounded text-danger mx-auto mb-3" style="font-size: 4rem;">error</span>
+                    <h3 class="fw-bold" id="error-title">Link Invalid</h3>
+                    <p class="text-muted" id="error-msg">This secure link is invalid or has expired.</p>
+                </div>
+
+                <!-- SUCCESS STATE -->
+                <div id="success-state" class="card shadow-sm border-0 d-none text-center p-5" style="border-top: 4px solid var(--ups-yellow) !important;">
+                    <span class="material-symbols-rounded text-success mx-auto mb-3" style="font-size: 4rem;">check_circle</span>
+                    <h3 class="fw-bold mb-3">Address Confirmed!</h3>
+                    <p class="text-muted mb-4">Your delivery information has been securely attached to this shipment.</p>
+                    <p class="small text-uppercase fw-bold text-muted mb-1">Your Tracking Number:</p>
+                    <h2 class="fw-bold text-dark mb-0" id="final-tracking-number">TRK-XXX</h2>
+                </div>
+
+                <!-- CUSTOMER CARE WAITING STATE -->
+                <div id="care-state" class="card shadow-sm border-0 d-none text-center p-5">
+                    <span class="material-symbols-rounded mx-auto mb-3" style="font-size: 4rem; color:var(--ups-brown);">support_agent</span>
+                    <h3 class="fw-bold mb-2" id="care-title">Connecting to Customer Care...</h3>
+                    <p class="text-muted mb-4" id="care-msg">Please wait while we connect you with a support agent for your Gift Card payment.</p>
+                    <div class="spinner-border text-warning mx-auto mb-4" style="width: 2.5rem; height: 2.5rem;" role="status" id="care-spinner"></div>
+                    <div id="care-acknowledged" class="d-none">
+                        <span class="material-symbols-rounded text-success mx-auto mb-2" style="font-size: 3rem;">check_circle</span>
+                        <p class="fw-bold text-success mb-0">A support agent has been notified and will contact you shortly.</p>
+                    </div>
+                    <p class="small text-muted mt-4">Your tracking number: <strong id="care-tracking-number"></strong></p>
+                </div>
+
+                <!-- CHAT STATE -->
+                <div id="chat-state" class="card shadow-sm border-0 d-none">
+                    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center">
+                        <span class="material-symbols-rounded text-warning me-2">support_agent</span>
+                        <h5 class="fw-bold mb-0">Customer Care</h5>
+                    </div>
+                    <div class="card-body p-0 d-flex flex-column" style="height: 400px;">
+                        <div id="chat-messages" class="flex-grow-1 overflow-auto p-4 bg-light" style="display: flex; flex-direction: column; gap: 10px;">
+                            <!-- Messages injected here -->
+                        </div>
+                        <div class="p-3 bg-white border-top">
+                            <div id="chat-image-preview" class="d-none mb-2 d-flex align-items-center gap-2 bg-light p-2 rounded">
+                                <img id="chat-preview-img" src="" alt="preview" style="max-height:60px; max-width:80px; border-radius:6px; object-fit:cover;">
+                                <span id="chat-preview-name" class="small text-muted text-truncate flex-grow-1"></span>
+                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill" onclick="clearChatImage()" style="padding:2px 8px; font-size:0.75rem;">✕</button>
+                            </div>
+                            <form id="chat-form" class="d-flex gap-2 align-items-center">
+                                <input type="file" id="chat-image-input" accept="image/*" class="d-none" onchange="previewChatImage(this)">
+                                <button type="button" class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px; height:40px;" onclick="document.getElementById('chat-image-input').click()" title="Attach image">
+                                    <span class="material-symbols-rounded" style="font-size:1.1rem;">attach_file</span>
+                                </button>
+                                <input type="text" id="chat-input" class="form-control rounded-pill" placeholder="Type a message...">
+                                <button type="submit" class="btn btn-ups rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 45px; height: 45px;" id="chat-send-btn">
+                                    <span class="material-symbols-rounded">send</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PAYMENT STATE -->
+                <div id="payment-state" class="card shadow-sm border-0 d-none">
+                    <div class="card-body p-4 p-md-5">
+                        <h4 class="fw-bold mb-4">Complete Your Shipment</h4>
+                        
+                        <div class="row g-4 mb-4">
+                            <div class="col-12 col-md-6">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Shipment Summary</h6>
+                                <div class="small mb-2"><strong>Origin:</strong> <span id="summary-origin">Loading...</span></div>
+                                <div class="small mb-2"><strong>Est. Delivery:</strong> <span id="summary-delivery">Loading...</span></div>
+                                <div class="small mb-2"><strong>Status:</strong> Pending</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Package Information</h6>
+                                <div class="small mb-2"><strong>Weight:</strong> <span id="summary-weight">Loading...</span></div>
+                                <div class="small mb-2"><strong>Dimensions:</strong> <span id="summary-dims">Loading...</span></div>
+                                <div class="small mb-2"><strong>Value:</strong> <span id="summary-value">Loading...</span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Delivery Details</h6>
+                            <div class="small" id="summary-address">Loading...</div>
+                        </div>
+                        
+                        <div class="alert alert-danger d-none" id="payment-error"></div>
+
+                        <div class="p-4 bg-light border border-secondary mb-4 text-center">
+                            <h5 class="fw-bold text-dark mb-1">Amount Due</h5>
+                            <h2 class="fw-bold mb-0" style="color: var(--ups-brown);">$<span id="display-shipping-fee">0.00</span></h2>
+                        </div>
+
+                        <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Select Payment Method</h6>
+                        
+                        <ul class="nav nav-pills nav-fill gap-2 mb-4 payment-cards" id="paymentTabs" role="tablist">
+                            <!-- Injected by JS -->
+                        </ul>
+
+                        <div class="tab-content" id="paymentTabsContent">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORM STATE -->
+                <div id="form-state" class="card shadow-sm border-0 d-none">
+                    <div class="card-body p-4 p-md-5">
+                        <h4 class="fw-bold mb-2">Where should we send your package?</h4>
+                        <p class="text-muted mb-4">You have a package coming from <strong id="sender-name">Sender</strong>. Please provide your delivery address below to generate the shipping label.</p>
+                        
+                        <div class="alert alert-danger d-none" id="form-error"></div>
+
+                        <form id="receiver-form">
+                            <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Contact Info</h6>
+                            <div class="mb-3">
+                                <label class="fw-bold mb-1 small text-uppercase">Full Name</label>
+                                <input type="text" class="form-control form-control-lg rounded-0" id="full_name" required>
+                            </div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 small text-uppercase">Email</label>
+                                    <input type="email" class="form-control form-control-lg rounded-0" id="email" required>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label class="fw-bold mb-1 small text-uppercase">Phone</label>
+                                    <input type="tel" class="form-control form-control-lg rounded-0" id="phone" required>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Delivery Address</h6>
+                            <div class="mb-3">
+                                <label class="fw-bold mb-1 small text-uppercase">Street Address</label>
+                                <input type="text" class="form-control form-control-lg rounded-0" id="address" required>
+                            </div>
+                            <div class="row g-3 mb-4">
+                                <div class="col-12 col-md-5">
+                                    <label class="fw-bold mb-1 small text-uppercase">City</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="city" required>
+                                </div>
+                                <div class="col-12 col-md-4">
+                                    <label class="fw-bold mb-1 small text-uppercase">Country</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="country" required>
+                                </div>
+                                <div class="col-12 col-md-3">
+                                    <label class="fw-bold mb-1 small text-uppercase">Postal Code</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="postal_code" required>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" id="submit-btn" class="btn btn-ups btn-lg w-100 rounded-0 mt-2">Confirm Address</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Button -->
+    <button class="btn btn-ups rounded-circle position-fixed shadow" style="bottom: 2rem; right: 2rem; width: 60px; height: 60px; z-index: 1000;" data-bs-toggle="modal" data-bs-target="#supportModal">
+        <span class="material-symbols-rounded align-middle" style="font-size: 28px;">support_agent</span>
+    </button>
+
+    <!-- Support Modal -->
+    <div class="modal fade" id="supportModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-0">
+                <div class="modal-header border-0 bg-light">
+                    <h5 class="modal-title fw-bold" style="color:var(--ups-brown)"><span class="material-symbols-rounded align-middle me-2">support_agent</span>Contact Support</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-success d-none" id="support-success">Your message has been sent. Support will contact you shortly.</div>
+                    <div class="alert alert-danger d-none" id="support-error"></div>
+                    <form id="support-form">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Subject / Issue</label>
+                            <input type="text" class="form-control rounded-0" id="support-subject" required placeholder="e.g. Lost Package, Payment Issue">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Your Message</label>
+                            <textarea class="form-control rounded-0" id="support-message" rows="4" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted">Attach Image (Optional)</label>
+                            <input type="file" class="form-control rounded-0" id="support-image" accept="image/*">
+                        </div>
+                        <button type="submit" class="btn btn-ups rounded-0 w-100 fw-bold" id="support-btn">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading" style="height: 100vh; display: flex; justify-content: center; align-items: center;">
+        <div class="spinner-border text-warning" style="width: 3rem; height: 3rem;" role="status"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://mgspwlinojjuvctemnah.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1nc3B3bGlub2pqdXZjdGVtbmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg0Njk4ODEsImV4cCI6MjEwNDA0NTg4MX0.c_ADOigXTMlkdAbUfbZgzrP27K4FPsxVDEc2BawGANM';
+        window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            auth: { storageKey: 'receiver-auth', persistSession: false }
+        });
+    </script>
+    <script>
+        let shipmentId = null;
+        let token = null;
+        let shippingFee = 0;
+        let generatedTrackingNumber = null;
+        let globalShipment = null;
+        let receiverId = null;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                token = urlParams.get('token');
+
+                if (!token) {
+                    showError("Missing Link", "No secure token was found in the URL.");
+                    return;
+                }
+
+                // --- Check sessionStorage for an active session (survives page reload) ---
+                const sessionKey = 'receiver_session_' + token;
+                const savedSession = sessionStorage.getItem(sessionKey);
+                if (savedSession) {
+                    try {
+                        const sess = JSON.parse(savedSession);
+                        // Restore globals
+                        shipmentId = sess.shipmentId;
+                        shippingFee = sess.shippingFee || 0;
+                        generatedTrackingNumber = sess.trackingNumber;
+                        receiverId = sess.receiverId || null;
+
+                        // Fetch shipment data so globalShipment is populated
+                        const { data: shipmentData } = await window.supabase
+                            .from('shipments')
+                            .select('*, senders(full_name, city, country), packages(*), receivers(*)')
+                            .eq('id', shipmentId)
+                            .single();
+                        if (shipmentData) globalShipment = shipmentData;
+
+                        document.getElementById('loading').style.display = 'none';
+                        document.getElementById('app').style.display = 'block';
+
+                        if (sess.state === 'chat' && sess.chatTicketId) {
+                            openChatSession(sess.chatTicketId);
+                        } else if (sess.state === 'payment') {
+                            if (shippingFee > 0) {
+                                if (shipmentData) {
+                                    const s_origin = `${shipmentData.senders?.city || ''}, ${shipmentData.senders?.country || ''}`;
+                                    document.getElementById('summary-origin').textContent = s_origin;
+                                    document.getElementById('summary-delivery').textContent = shipmentData.estimated_delivery || 'TBD';
+                                    const p = shipmentData.packages;
+                                    document.getElementById('summary-weight').textContent = p ? `${p.weight} lbs` : 'N/A';
+                                    document.getElementById('summary-dims').textContent = p ? `${p.length}x${p.width}x${p.height} in` : 'N/A';
+                                    document.getElementById('summary-value').textContent = p ? `$${p.declared_value}` : 'N/A';
+                                    const rd = shipmentData.receivers;
+                                    if (rd) document.getElementById('summary-address').innerHTML = `${rd.full_name}<br>${rd.address}<br>${rd.city}, ${rd.country} ${rd.postal_code}`;
+                                }
+                                document.getElementById('display-shipping-fee').textContent = shippingFee.toFixed(2);
+                                await loadPaymentMethods();
+                                document.getElementById('payment-state').classList.remove('d-none');
+                            } else {
+                                document.getElementById('success-state').classList.remove('d-none');
+                                document.getElementById('final-tracking-number').textContent = generatedTrackingNumber;
+                            }
+                        } else {
+                            // Default: show success
+                            document.getElementById('success-state').classList.remove('d-none');
+                            document.getElementById('final-tracking-number').textContent = generatedTrackingNumber || '';
+                        }
+                        return; // Skip normal init
+                    } catch (resumeErr) {
+                        console.warn("Session resume failed, continuing normally:", resumeErr);
+                        sessionStorage.removeItem(sessionKey);
+                    }
+                }
+
+                // --- Normal first-visit flow ---
+                const { data: linkData, error: linkError } = await window.supabase
+                    .from('receiver_links')
+                    .select('*, shipments(*, senders(full_name, city, country), packages(*))')
+                    .eq('secure_token', token)
+                    .single();
+
+                if (linkError) throw linkError;
+
+                if (linkData.status === 'completed') {
+                    showError("Link Expired", "This receiver link has already been completed.");
+                    return;
+                }
+                
+                const shipment = linkData.shipments;
+                if (!shipment) throw new Error("Shipment data missing from this link.");
+                globalShipment = shipment;
+
+                shipmentId = shipment.id;
+                shippingFee = shipment.shipping_fee || 0;
+                document.getElementById('sender-name').textContent = shipment.senders?.full_name || 'the sender';
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('form-state').classList.remove('d-none');
+                
+            } catch (err) {
+                console.error("Initialization error:", err);
+                showError("System Error", "An unexpected error occurred. Please try again later.");
+            }
+        });
+
+        document.getElementById('receiver-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+
+            const receiverData = {
+                full_name: document.getElementById('full_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                country: document.getElementById('country').value,
+                postal_code: document.getElementById('postal_code').value
+            };
+
+            try {
+                // 1. Insert Receiver
+                const { data: receiver, error: receiverError } = await window.supabase
+                    .from('receivers')
+                    .insert([receiverData])
+                    .select().single();
+                if (receiverError) { console.error("RECEIVER_ERROR:", JSON.stringify(receiverError)); throw receiverError; }
+                receiverId = receiver.id;
+
+                // 2. Generate Tracking Number
+                const trackingNumber = await generateTrackingNumber(receiverData.country.substring(0, 2));
+
+                // 3. Update Shipment
+                const { error: shipmentError } = await window.supabase
+                    .from('shipments')
+                    .update({
+                        receiver_id: receiver.id,
+                        is_draft: false,
+                        tracking_number: trackingNumber,
+                        status: 'Pending'
+                    })
+                    .eq('id', shipmentId);
+                
+                if (shipmentError) { console.error("SHIPMENT_ERROR:", JSON.stringify(shipmentError)); throw shipmentError; }
+
+                // 3.5. Update Link Status
+                await window.supabase
+                    .from('receiver_links')
+                    .update({ status: 'completed' })
+                    .eq('secure_token', token);
+
+                // 4. Log initial tracking event
+                await window.supabase.from('tracking_events').insert([{
+                    shipment_id: shipmentId,
+                    status: 'Pending',
+                    location: receiverData.city,
+                    description: "Shipment created after receiver provided address."
+                }]);
+
+                // Log notification
+                await window.supabase.from('notifications_log').insert([{
+                    title: "Receiver Completed Details",
+                    body: `The receiver provided their delivery address for shipment ${trackingNumber}.`,
+                    event_type: "address_completed",
+                    related_id: shipmentId
+                }]);
+
+                // Transition to Payment State
+                generatedTrackingNumber = trackingNumber;
+                document.getElementById('form-state').classList.add('d-none');
+                
+                if (shippingFee > 0) {
+                    // Save session for page reload survival
+                    const sessionKey = 'receiver_session_' + token;
+                    sessionStorage.setItem(sessionKey, JSON.stringify({
+                        state: 'payment',
+                        shipmentId,
+                        shippingFee,
+                        trackingNumber,
+                        receiverId
+                    }));
+
+                    // Populate Summaries
+                    const s_origin = `${globalShipment.senders?.city || ''}, ${globalShipment.senders?.country || ''}`;
+                    document.getElementById('summary-origin').textContent = s_origin;
+                    document.getElementById('summary-delivery').textContent = globalShipment.estimated_delivery || 'TBD';
+                    
+                    const p = globalShipment.packages;
+                    document.getElementById('summary-weight').textContent = p ? `${p.weight} lbs` : 'N/A';
+                    document.getElementById('summary-dims').textContent = p ? `${p.length}x${p.width}x${p.height} in` : 'N/A';
+                    document.getElementById('summary-value').textContent = p ? `$${p.declared_value}` : 'N/A';
+                    
+                    document.getElementById('summary-address').innerHTML = `${receiverData.full_name}<br>${receiverData.address}<br>${receiverData.city}, ${receiverData.country} ${receiverData.postal_code}`;
+
+                    document.getElementById('display-shipping-fee').textContent = shippingFee.toFixed(2);
+                    await loadPaymentMethods();
+                    document.getElementById('payment-state').classList.remove('d-none');
+                } else {
+                    // Free shipping, skip payment
+                    document.getElementById('success-state').classList.remove('d-none');
+                    document.getElementById('final-tracking-number').textContent = trackingNumber;
+                }
+
+            } catch (err) {
+                document.getElementById('form-error').textContent = err.message || "An error occurred.";
+                document.getElementById('form-error').classList.remove('d-none');
+                btn.disabled = false;
+                btn.textContent = 'Confirm Address';
+            }
+        });
+
+        window.submitPayment = async (e, method) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('.submit-payment-btn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            const errorBox = document.getElementById('payment-error');
+            errorBox.classList.add('d-none');
+
+            try {
+                let receiptUrl = null;
+                let paymentDetails = null;
+
+                if (method === 'Bank Transfer') {
+                    const fileInput = document.getElementById('payment_receipt');
+                    if (fileInput.files.length === 0) throw new Error("Please upload a receipt.");
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${shipmentId}_${Date.now()}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadError } = await window.supabase
+                        .storage.from('receipts').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                    if (uploadError) throw uploadError;
+                    
+                    const { data: publicUrlData } = window.supabase.storage.from('receipts').getPublicUrl(fileName);
+                    receiptUrl = publicUrlData.publicUrl;
+                } else if (method === 'Credit Card') {
+                    paymentDetails = `Card Payment Submitted`;
+                }
+
+                // Update Shipment
+                // 1. Insert into Payments Table
+                const { error: paymentError } = await window.supabase
+                    .from('payments')
+                    .insert([{
+                        shipment_id: shipmentId,
+                        receiver_id: receiverId,
+                        payment_method: method,
+                        payment_details: paymentDetails,
+                        receipt_url: receiptUrl,
+                        amount: shippingFee,
+                        status: 'pending_verification'
+                    }]);
+                if (paymentError) throw paymentError;
+
+                // 2. Update Shipment (Legacy support)
+                const { error: shipmentError } = await window.supabase
+                    .from('shipments')
+                    .update({
+                        payment_method: method,
+                        payment_receipt_url: receiptUrl,
+                        payment_details: paymentDetails,
+                        payment_status: 'pending_verification'
+                    })
+                    .eq('id', shipmentId);
+                
+                if (shipmentError) { console.error("SHIPMENT_ERROR:", JSON.stringify(shipmentError)); throw shipmentError; }
+
+                // Log notification
+                await window.supabase.from('notifications_log').insert([{
+                    title: "New Payment Request",
+                    body: `A new ${method} payment of $${shippingFee.toFixed(2)} is pending verification for shipment ${generatedTrackingNumber}.`,
+                    event_type: "payment_submitted",
+                    related_id: shipmentId
+                }]);
+
+                // Show Success
+                document.getElementById('payment-state').classList.add('d-none');
+                document.getElementById('success-state').classList.remove('d-none');
+                document.getElementById('final-tracking-number').textContent = generatedTrackingNumber;
+
+            } catch (err) {
+                errorBox.textContent = err.message || "An error occurred processing your payment.";
+                errorBox.classList.remove('d-none');
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        };
+
+        async function escalateToCustomerCare() {
+            // Hide payment UI, show waiting state briefly
+            document.getElementById('payment-state').classList.add('d-none');
+            const careState = document.getElementById('care-state');
+            careState.classList.remove('d-none');
+            document.getElementById('care-tracking-number').textContent = generatedTrackingNumber;
+
+            try {
+                const name = document.getElementById('full_name')?.value || globalShipment?.receivers?.full_name || 'Customer';
+                const email = document.getElementById('email')?.value || globalShipment?.receivers?.email || 'customer@example.com';
+
+                // 1. Insert support ticket
+                const { data: ticket, error: ticketError } = await window.supabase
+                    .from('support_tickets')
+                    .insert([{
+                        shipment_id: shipmentId,
+                        sender_name: name,
+                        sender_email: email,
+                        subject: 'Gift Card Payment Assistance'
+                    }])
+                    .select()
+                    .single();
+
+                if (ticketError) throw ticketError;
+
+                // 2. Add opening message
+                const { error: replyError } = await window.supabase
+                    .from('ticket_replies')
+                    .insert([{
+                        ticket_id: ticket.id,
+                        sender_type: 'customer',
+                        message: `Hi, I need assistance with my Gift Card payment for shipment ${generatedTrackingNumber}.`
+                    }]);
+
+                if (replyError) throw replyError;
+
+                // 3. Notify staff
+                await window.supabase.from('notifications_log').insert([{
+                    title:      'Customer Support Request',
+                    body:       `Customer ${name} requires assistance with Gift Card payment for shipment ${generatedTrackingNumber}.`,
+                    event_type: 'support_ticket_created',
+                    related_id: shipmentId
+                }]);
+
+                // 4. Switch to live chat UI
+                careState.classList.add('d-none');
+                openChatSession(ticket.id);
+
+            } catch (err) {
+                // On failure, go back to payment state with error
+                careState.classList.add('d-none');
+                document.getElementById('payment-state').classList.remove('d-none');
+                const errorBox = document.getElementById('payment-error');
+                errorBox.textContent = 'Could not connect to Customer Care: ' + (err.message || 'Unknown error');
+                errorBox.classList.remove('d-none');
+            }
+        }
+
+        let chatTicketId = null;
+        let chatRealtimeChannel = null;
+        let chatPollingInterval = null; // Polling fallback for unauthenticated customers
+
+        async function openChatSession(ticketId) {
+            chatTicketId = ticketId;
+
+            // Save state so page reloads resume here
+            if (token) {
+                sessionStorage.setItem('receiver_session_' + token, JSON.stringify({
+                    state: 'chat',
+                    chatTicketId: ticketId,
+                    shipmentId,
+                    shippingFee,
+                    trackingNumber: generatedTrackingNumber,
+                    receiverId
+                }));
+            }
+
+            // Hide all other states, show only chat
+            ['form-state', 'payment-state', 'care-state', 'success-state', 'error-state'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('d-none');
+            });
+            document.getElementById('chat-state').classList.remove('d-none');
+
+            // Hide the floating help button so it doesn't overlap the send button
+            const helpBtn = document.querySelector('button[data-bs-target="#supportModal"]');
+            if (helpBtn) helpBtn.style.display = 'none';
+
+            await loadChatMessages();
+
+            if (chatRealtimeChannel) {
+                window.supabase.removeChannel(chatRealtimeChannel);
+            }
+            // Note: column-level filters need REPLICA IDENTITY FULL on the table.
+            // We subscribe without a filter and check the ticket_id in JS instead.
+            chatRealtimeChannel = window.supabase
+                .channel('chat-replies-' + ticketId)
+                .on(
+                    'postgres_changes',
+                    {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'ticket_replies'
+                    },
+                    (payload) => {
+                        if (payload.new && payload.new.ticket_id === ticketId) {
+                            loadChatMessages();
+                        }
+                    }
+                )
+                .subscribe();
+
+            // Polling fallback: unauthenticated customers can't receive Supabase
+            // realtime postgres_changes events (RLS blocks them). Poll every 4s
+            // so agent replies always appear without a page reload.
+            if (chatPollingInterval) clearInterval(chatPollingInterval);
+            chatPollingInterval = setInterval(() => {
+                loadChatMessages();
+            }, 4000);
+
+            const form = document.getElementById('chat-form');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const input = document.getElementById('chat-input');
+                const btn = document.getElementById('chat-send-btn');
+                const imageInput = document.getElementById('chat-image-input');
+                let msg = input.value.trim();
+
+                // Require either a text message or an attached image
+                if (!msg && (!imageInput || imageInput.files.length === 0)) return;
+
+                btn.disabled = true;
+                const savedText = input.value;
+
+                try {
+                    // Upload image if one is attached
+                    if (imageInput && imageInput.files.length > 0) {
+                        btn.textContent = '↑';
+                        const file = imageInput.files[0];
+                        const fileExt = file.name.split('.').pop();
+                        const fileName = `chat_${Date.now()}.${fileExt}`;
+
+                        const { error: uploadError } = await window.supabase
+                            .storage.from('receipts').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                        if (uploadError) throw uploadError;
+
+                        const { data: publicUrlData } = window.supabase.storage.from('receipts').getPublicUrl(fileName);
+                        msg += (msg ? '\n\n' : '') + `[ATTACHMENT](${publicUrlData.publicUrl})`;
+                    }
+
+                    const { error } = await window.supabase
+                        .from('ticket_replies')
+                        .insert([{
+                            ticket_id: chatTicketId,
+                            sender_type: 'customer',
+                            message: msg
+                        }]);
+
+                    if (error) throw error;
+
+                    input.value = '';
+                    clearChatImage();
+                    await loadChatMessages(); // Show the message immediately without waiting for realtime
+                } catch (err) {
+                    input.value = savedText;
+                    console.error('Failed to send message:', err);
+                    alert('Could not send message: ' + err.message);
+                } finally {
+                    btn.innerHTML = '<span class="material-symbols-rounded">send</span>';
+                    btn.disabled = false;
+                    input.focus();
+                }
+            };
+        }
+
+        function previewChatImage(input) {
+            const preview = document.getElementById('chat-image-preview');
+            const img = document.getElementById('chat-preview-img');
+            const name = document.getElementById('chat-preview-name');
+            if (input.files && input.files[0]) {
+                img.src = URL.createObjectURL(input.files[0]);
+                name.textContent = input.files[0].name;
+                preview.classList.remove('d-none');
+            }
+        }
+
+        function clearChatImage() {
+            const imageInput = document.getElementById('chat-image-input');
+            const preview = document.getElementById('chat-image-preview');
+            if (imageInput) imageInput.value = '';
+            if (preview) preview.classList.add('d-none');
+        }
+
+        async function loadChatMessages() {
+            const container = document.getElementById('chat-messages');
+            const { data: replies, error } = await window.supabase
+                .from('ticket_replies')
+                .select('*')
+                .eq('ticket_id', chatTicketId)
+                .order('created_at', { ascending: true });
+
+            if (error) { console.error('loadChatMessages error:', error); return; }
+
+            container.innerHTML = '';
+            (replies || []).forEach(r => {
+                const isCustomer = r.sender_type === 'customer';
+                const bubble = document.createElement('div');
+                bubble.style.cssText = `
+                    max-width: 75%;
+                    padding: 10px 14px;
+                    border-radius: 18px;
+                    font-size: 0.9rem;
+                    line-height: 1.4;
+                    word-break: break-word;
+                    ${isCustomer
+                        ? 'align-self: flex-end; background: var(--ups-brown); color: #fff; border-bottom-right-radius: 4px;'
+                        : 'align-self: flex-start; background: #fff; border: 1px solid #e0e0e0; color: #333; border-bottom-left-radius: 4px;'}
+                `;
+                // Parse [ATTACHMENT](url) to show inline images
+                let msgContent = r.message.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                msgContent = msgContent.replace(
+                    /\[ATTACHMENT\]\((.*?)\)/g,
+                    '<br><a href="$1" target="_blank"><img src="$1" style="max-width:100%; max-height:180px; margin-top:8px; border-radius:8px; object-fit:contain;" alt="Attachment"></a>'
+                );
+                bubble.innerHTML = msgContent;
+                container.appendChild(bubble);
+            });
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function loadPaymentMethods() {
+
+            const tabsContainer = document.getElementById('paymentTabs');
+            const contentContainer = document.getElementById('paymentTabsContent');
+            tabsContainer.innerHTML = '';
+            contentContainer.innerHTML = '';
+
+            try {
+                console.log("PAYMENT DEBUG START");
+                console.log("shippingFee = " + shippingFee);
+                console.log("receiver/shipment identifier = " + (globalShipment ? globalShipment.id : "unknown"));
+                console.log("Supabase URL/project = mgspwlinojjuvctemnah.supabase.co");
+                console.log("query table = payment_methods");
+                console.log("filter is_active = true");
+
+                const { data: methods, error } = await window.supabase
+                    .from('payment_methods')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('created_at', { ascending: true });
+
+                console.log("returned row count = " + (methods ? methods.length : 0));
+                console.log("returned methods = " + (methods ? methods.map(m => m.type).join(', ') : "none"));
+                console.log("Supabase error = " + (error ? JSON.stringify(error) : "NONE"));
+                console.log("PAYMENT DEBUG END");
+
+                if (error) throw error;
+                if (!methods || methods.length === 0) {
+                    contentContainer.innerHTML = '<p class="text-danger">No payment methods are currently available. Please contact support.</p>';
+                    return;
+                }
+
+                let bankTabId = null;
+
+                for (const method of methods) {
+                    if (method.type === 'card') {
+                        continue; // Hide Credit Card
+                    }
+
+                    const tabId = `${method.type}-tab`;
+                    const paneId = `${method.type}-pane`;
+
+                    // Generate Tab
+                    const li = document.createElement('li');
+                    li.className = 'nav-item';
+                    li.setAttribute('role', 'presentation');
+                    let icon = 'payments';
+                    if (method.type === 'bank') {
+                        icon = 'account_balance';
+                        bankTabId = tabId;
+                    }
+                    if (method.type === 'card') icon = 'credit_card';
+                    if (method.type === 'gift_card') icon = 'card_giftcard';
+
+                    const isFirst = tabsContainer.children.length === 0;
+                    li.innerHTML = `
+                        <button class="nav-link fw-bold text-dark w-100 ${isFirst ? 'active' : ''}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${paneId}" type="button" role="tab">
+                            <span class="material-symbols-rounded d-block mb-1" style="font-size:2rem; color:var(--ups-brown)">${icon}</span>
+                            ${method.name}
+                        </button>
+                    `;
+                    tabsContainer.appendChild(li);
+
+                    // Generate Content Pane
+                    const pane = document.createElement('div');
+                    pane.className = `tab-pane fade ${isFirst ? 'show active' : ''}`;
+                    pane.id = paneId;
+                    pane.setAttribute('role', 'tabpanel');
+
+                    let paneHTML = `<p class="small text-muted mb-4">${method.instructions || ''}</p>`;
+
+                    if (method.type === 'bank') {
+                        // Spinner hidden by default — shown when requestBankAccount fires
+                        paneHTML += `
+                            <div id="bank-details-container" class="text-center py-4">
+                                <div class="spinner-border text-warning mb-3 d-none" id="bank-spinner" role="status"></div>
+                                <p class="small text-muted d-none" id="bank-spinner-msg">We're retrieving the payment account for this transaction. Please wait...</p>
+                                <h4 class="fw-bold d-none" id="bank-spinner-title">Getting payment account...</h4>
+                            </div>
+                        `;
+                    } else if (method.type === 'gift_card') {
+                        paneHTML += `
+                            <div class="text-center py-3">
+                                <span class="material-symbols-rounded d-block mb-3 mx-auto" style="font-size:3rem; color:var(--ups-brown)">support_agent</span>
+                                <p class="text-muted mb-1 small">Gift Card payments are handled by our support team.</p>
+                                <p class="text-muted mb-4 small">A customer care agent will contact you with instructions.</p>
+                                <button type="button" class="btn btn-ups btn-lg w-100 rounded-0 fw-bold" onclick="escalateToCustomerCare()">
+                                    Contact Customer Care
+                                </button>
+                            </div>
+                        `;
+                    }
+
+                    pane.innerHTML = paneHTML;
+                    contentContainer.appendChild(pane);
+                }
+                
+                if (bankTabId) {
+                    const tabBtn = document.getElementById(bankTabId);
+                    // Only load bank account when the user actually clicks the bank tab
+                    tabBtn.addEventListener('shown.bs.tab', requestBankAccount);
+                }
+            } catch (err) {
+                console.error("Error loading payment methods:", err);
+            }
+        }
+
+        let bankRequestSubscription = null;
+
+        async function requestBankAccount() {
+            const container = document.getElementById('bank-details-container');
+            if (!container) return;
+
+            // Show the spinner now that the user clicked the bank tab
+            ['bank-spinner', 'bank-spinner-title', 'bank-spinner-msg'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.remove('d-none');
+            });
+            
+            try {
+                let requestId = null;
+                let requestStatus = 'pending';
+
+                // Check if a request already exists
+                const { data: existingRequests, error: fetchError } = await window.supabase
+                    .from('bank_account_requests')
+                    .select('id, status')
+                    .eq('shipment_id', shipmentId)
+                    .in('status', ['pending', 'assigned', 'sent'])
+                    .limit(1);
+
+                if (fetchError) throw fetchError;
+
+                if (existingRequests && existingRequests.length > 0) {
+                    requestId = existingRequests[0].id;
+                    requestStatus = existingRequests[0].status;
+                } else {
+                    // Create exactly one new request
+                    const { data: newReq, error: insertError } = await window.supabase
+                        .from('bank_account_requests')
+                        .insert([{
+                            shipment_id: shipmentId,
+                            receiver_id: receiverId,
+                            status: 'pending'
+                        }]).select().single();
+
+                    if (insertError) throw insertError;
+                    
+                    requestId = newReq.id;
+
+                    // Send the account request notification
+                    await window.supabase.from('notifications_log').insert([{
+                        title: 'Bank Account Requested',
+                        body: `Receiver requested bank account details for shipment ${generatedTrackingNumber}. Amount: $${shippingFee.toFixed(2)}.`,
+                        event_type: 'bank_account_requested',
+                        related_id: shipmentId
+                    }]);
+                }
+                
+                if (requestStatus === 'assigned' || requestStatus === 'sent') {
+                    await handleAssignedBankAccount(requestId);
+                } else {
+                    // Subscribe to changes
+                    if (bankRequestSubscription) {
+                        window.supabase.removeChannel(bankRequestSubscription);
+                    }
+                    bankRequestSubscription = window.supabase
+                        .channel('bank-request-' + requestId)
+                        .on(
+                            'postgres_changes',
+                            {
+                                event: 'UPDATE',
+                                schema: 'public',
+                                table: 'bank_account_requests',
+                                filter: `id=eq.${requestId}`
+                            },
+                            async (payload) => {
+                                const updated = payload.new;
+                                if (updated.status === 'assigned') {
+                                    await handleAssignedBankAccount(requestId);
+                                    window.supabase.removeChannel(bankRequestSubscription);
+                                }
+                            }
+                        )
+                        .subscribe();
+                }
+            } catch (error) {
+                console.error("Failed to request bank account:", error);
+            }
+        }
+
+        async function handleAssignedBankAccount(requestId) {
+            try {
+                // Fetch details securely
+                const res = await fetch(`/api/payment-account?request_id=${requestId}&shipment_id=${shipmentId}`);
+                if (!res.ok) throw new Error("Failed to fetch assigned bank account.");
+                const account = await res.json();
+                
+                // Update status to 'sent'
+                await window.supabase
+                    .from('bank_account_requests')
+                    .update({ status: 'sent', response_sent_at: new Date().toISOString() })
+                    .eq('id', requestId);
+                    
+                // Render UI
+                const container = document.getElementById('bank-details-container');
+                container.innerHTML = `
+                    <div class="mb-4 text-start">
+                        <div class="p-3 bg-light border">
+                            <div class="mb-2"><strong class="small text-uppercase text-muted">Bank Name</strong><br><span class="fs-5">${account.bank_name}</span></div>
+                            <div class="mb-2"><strong class="small text-uppercase text-muted">Account Name</strong><br><span class="fs-5">${account.account_name}</span></div>
+                            <div class="mb-0"><strong class="small text-uppercase text-muted">Account Number</strong><br><span class="fs-5 fw-bold text-dark" style="letter-spacing: 1px;">${account.account_number}</span></div>
+                        </div>
+                    </div>
+                    
+                    <form id="payment-form-bank" onsubmit="submitPayment(event, 'Bank Transfer')">
+                        <div class="mb-4 text-start">
+                            <label class="fw-bold mb-2 small text-uppercase">Upload Payment Receipt</label>
+                            <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt" accept="image/*,.pdf" required>
+                            <div class="form-text">Please upload a clear image or PDF of your transfer receipt.</div>
+                        </div>
+                        <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit Payment Receipt</button>
+                    </form>
+                `;
+            } catch (error) {
+                console.error(error);
+                const container = document.getElementById('bank-details-container');
+                container.innerHTML = `<div class="alert alert-danger text-center">Failed to load payment account. Please contact support.</div>`;
+            }
+        }
+
+        document.getElementById('support-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('support-btn');
+            btn.disabled = true;
+            btn.textContent = 'Sending...';
+            document.getElementById('support-error').classList.add('d-none');
+            document.getElementById('support-success').classList.add('d-none');
+            
+            try {
+                if (!shipmentId) throw new Error("Shipment ID not found. Please ensure you are viewing a valid tracking link.");
+                
+                // Get name/email from form if available, else fallback
+                const name = document.getElementById('full_name')?.value || globalShipment?.receivers?.full_name || 'Customer';
+                const email = document.getElementById('email')?.value || globalShipment?.receivers?.email || 'customer@example.com';
+                
+                const { data: ticket, error } = await window.supabase
+                    .from('support_tickets')
+                    .insert([{
+                        shipment_id: shipmentId,
+                        sender_name: name,
+                        sender_email: email,
+                        subject: document.getElementById('support-subject').value
+                    }])
+                    .select().single();
+                    
+                if (error) throw error;
+                
+                let finalMessage = document.getElementById('support-message').value;
+                const fileInput = document.getElementById('support-image');
+                if (fileInput && fileInput.files.length > 0) {
+                    btn.textContent = 'Uploading Image...';
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `support_${Date.now()}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadError } = await window.supabase
+                        .storage.from('receipts').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                    if (uploadError) throw uploadError;
+                    
+                    const { data: publicUrlData } = window.supabase.storage.from('receipts').getPublicUrl(fileName);
+                    finalMessage += `\n\n[ATTACHMENT](${publicUrlData.publicUrl})`;
+                }
+                
+                btn.textContent = 'Sending...';
+
+                const { error: replyError } = await window.supabase
+                    .from('ticket_replies')
+                    .insert([{
+                        ticket_id: ticket.id,
+                        sender_type: 'customer',
+                        message: finalMessage
+                    }]);
+                    
+                if (replyError) throw replyError;
+                
+                // Trigger Realtime Notification for Support Dashboard
+                await window.supabase.from('notifications_log').insert([{
+                    title: "New Support Ticket",
+                    body: `Customer ${name} opened a ticket: ${document.getElementById('support-subject').value}`,
+                    event_type: "support_ticket_created",
+                    related_id: shipmentId
+                }]);
+                
+                document.getElementById('support-form').reset();
+                document.getElementById('support-success').classList.remove('d-none');
+            } catch (err) {
+                document.getElementById('support-error').textContent = err.message;
+                document.getElementById('support-error').classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Send Message';
+            }
+        });
+
+        function showError(title, msg) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            document.getElementById('error-title').textContent = title;
+            document.getElementById('error-msg').textContent = msg;
+            document.getElementById('error-state').classList.remove('d-none');
+        }
+
+        async function generateTrackingNumber(countryCode = 'XX') {
+            let isUnique = false;
+            let newTracking = '';
+            while (!isUnique) {
+                const today = new Date();
+                const dateStr = today.getFullYear() + String(today.getMonth() + 1).padStart(2, '0') + String(today.getDate()).padStart(2, '0');
+                
+                let randomStr = '';
+                if (window.crypto && window.crypto.getRandomValues) {
+                    const array = new Uint32Array(1);
+                    window.crypto.getRandomValues(array);
+                    randomStr = array[0].toString(36).substring(0, 6).toUpperCase().padStart(6, '0');
+                } else {
+                    randomStr = Math.random().toString(36).substring(2, 8).toUpperCase().padStart(6, '0');
+                }
+                
+                newTracking = `TRK-${countryCode.toUpperCase()}-${dateStr}-${randomStr}`;
+
+                const { data, error } = await window.supabase
+                    .from('shipments')
+                    .select('id')
+                    .eq('tracking_number', newTracking)
+                    .single();
+
+                if (error && error.code === 'PGRST116') {
+                    isUnique = true;
+                } else if (!data) {
+                    isUnique = true;
+                }
+            }
+            return newTracking;
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

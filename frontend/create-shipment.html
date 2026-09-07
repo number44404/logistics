@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Create a Shipment | UPS</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f7f7f7;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #121212;
+            background-image: radial-gradient(150% 100% at 50% 0%, #ffffff 0%, #f7f7f7 50%);
+            background-repeat: no-repeat;
+        }
+        
+        /* Header */
+        .simple-header {
+            background-color: white;
+            height: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        
+        /* Typography */
+        h1 {
+            font-size: 32px;
+            font-weight: 400;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            color: #121212;
+        }
+        .yellow-line {
+            background-color: #ffb500;
+            height: 4px;
+            width: 48px;
+            margin-bottom: 24px;
+        }
+        .required-text {
+            font-size: 13px;
+            color: #121212;
+            margin-bottom: 32px;
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .progress-node {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: white;
+            border: 3px solid #a3a3a3;
+            z-index: 2;
+        }
+        .progress-node.active {
+            border: 4px solid #00827b;
+            width: 20px;
+            height: 20px;
+        }
+        .progress-line {
+            height: 2px;
+            background-color: #a3a3a3;
+            flex-grow: 1;
+            max-width: 45px;
+            margin: 0 -2px;
+            z-index: 1;
+        }
+        .progress-text {
+            text-align: center;
+            font-size: 13px;
+            color: #4a4a4a;
+            margin-bottom: 4px;
+        }
+        .progress-title {
+            text-align: center;
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        /* Cards */
+        .shipment-card {
+            background-color: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            padding: 24px 16px;
+            margin-bottom: 24px;
+        }
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+        
+        /* Inputs */
+        .form-floating > .form-control, .form-floating > .form-select {
+            height: 56px;
+            border: 1px solid #757575;
+            border-radius: 4px;
+            color: #121212;
+            font-size: 16px;
+        }
+        .form-floating > label {
+            color: #4a4a4a;
+            padding: 1rem 0.75rem;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #00827b;
+            box-shadow: inset 0 0 0 1px #00827b;
+        }
+        
+        /* Input Addons */
+        .input-group-unit {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4a4a4a;
+            font-size: 16px;
+            z-index: 4;
+            pointer-events: none;
+        }
+        
+        /* Checkboxes */
+        .custom-checkbox {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-top: 16px;
+            margin-bottom: 16px;
+        }
+        .custom-checkbox input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            border: 1px solid #757575;
+            border-radius: 4px;
+            appearance: none;
+            -webkit-appearance: none;
+            outline: none;
+            cursor: pointer;
+            background-color: white;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .custom-checkbox input[type="checkbox"]:checked {
+            background-color: #00827b;
+            border-color: #00827b;
+        }
+        .custom-checkbox input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 8px;
+            top: 4px;
+            width: 6px;
+            height: 12px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+        .custom-checkbox label {
+            font-size: 15px;
+            color: #121212;
+            line-height: 1.4;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+        
+        /* Toggle Buttons */
+        .toggle-group {
+            display: flex;
+            border: 1px solid #00827b;
+            border-radius: 30px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+        .toggle-btn {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-btn.active {
+            background-color: #00827b;
+            color: white;
+        }
+        .toggle-btn:not(.active) {
+            background-color: white;
+            color: #121212;
+        }
+        
+        /* Buttons */
+        .btn-yellow {
+            background-color: #ffb500;
+            color: #121212;
+            border-radius: 30px;
+            height: 56px;
+            font-size: 18px;
+            font-weight: 700;
+            border: none;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        @media (min-width: 768px) {
+            .btn-yellow {
+                width: auto;
+                padding: 0 40px;
+                display: inline-flex;
+            }
+        }
+        .btn-yellow:hover {
+            background-color: #e6a300;
+        }
+        
+        /* Footer */
+        .simple-footer {
+            background-color: #3b2c24;
+            color: white;
+            padding: 24px;
+        }
+        .footer-legal-accordion {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        .footer-copyright {
+            font-size: 12px;
+            color: #b0aba8;
+            line-height: 1.5;
+        }
+        
+        /* Chat Bubble */
+        .chat-bubble {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background-color: #0060a8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            cursor: pointer;
+        }
+        
+        .box-svg-container {
+            display: flex;
+            justify-content: center;
+            margin: 32px 0;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Simple Header -->
+    <header class="simple-header">
+        <a href="index.html">
+            <svg viewBox="0 0 42 50" width="36" height="42" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.4 10.3C15 8.1 24.3 6.6 34.6 6.6L34.3 0C23 0 12.3 2 1.4 5.3L5.4 10.3z" fill="#ffb500"/>
+                <path d="M5.4 10.3L1.5 5.3C.8 7.6 0 10 0 12.5V36l20.4 14L41 35.8V9.7c-2.1.2-4.1.5-6.4 1L34.5 6.6C24.3 6.6 15 8 5.4 10.3z" fill="#331e11"/>
+                <path d="M12 18.5v11.3c0 2.2-1.5 3.3-3.6 3.3-2 0-3.6-1.1-3.6-3.3V18.5H1.6v11.7c0 4 2.8 5.7 6.7 5.7 4 0 6.9-1.8 6.9-5.7V18.5H12zm15.7.5c-2.7 0-4.6 1.4-5.2 3.6h-.1v-3.3h-3v16.1h3.2v-6.3c1.1 1.7 3 2.7 5 2.7 4.1 0 6.3-2.9 6.3-6.6 0-3.7-2.2-6.2-6.2-6.2zm-1 9.8c-2.3 0-4.2-1.6-4.2-4.1 0-2.4 1.7-4 4.1-4 2.4 0 3.8 1.8 3.8 4s-1.5 4.1-3.7 4.1zm11.7-7.7c-1.3-.7-2.3-1.1-2.3-2.1 0-.7.7-1.3 1.8-1.3s2 .5 2.6 1l1.4-2.2c-1-1-2.4-1.5-4-1.5-3 0-5 1.7-5 4 0 2.2 1.5 3 3.6 4.1 1.4.7 2.4 1.2 2.4 2.3 0 .8-.8 1.4-1.9 1.4-1.3 0-2.5-.7-3.3-1.6l-1.6 2.1c1.3 1.4 3 2 4.9 2 3 0 5.2-1.6 5.2-4.2 0-2.5-1.5-3.3-3.8-4z" fill="#ffb500"/>
+            </svg>
+        </a>
+        <!-- Mobile Avatar -->
+        <div class="bg-warning rounded-circle d-flex align-items-center justify-content-center d-md-none" style="width: 32px; height: 32px; cursor: pointer;">
+            <svg viewBox="0 0 24 24" fill="#3b2c24" width="20" height="20"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>
+        </div>
+        <!-- Desktop Log In Button -->
+        <button class="btn btn-warning rounded-pill fw-bold d-none d-md-flex align-items-center px-4" style="background-color: #ffb500; border: none; height: 40px; font-size: 15px;">
+            Log In <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16" class="ms-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+    </header>
+
+    <main class="container-fluid px-3" style="max-width: 950px; margin: 0 auto; padding-bottom: 80px;">
+        <!-- Title Section -->
+        <h1>Create a Shipment</h1>
+        <div class="yellow-line"></div>
+        <div class="required-text">* Indicates required field</div>
+
+        <!-- Progress Bar -->
+        <!-- Desktop Progress -->
+        <div class="d-none d-md-block mb-5 pt-3" style="max-width: 800px; margin: 0 auto;">
+            <div class="progress-container mb-2">
+                <div class="progress-node active"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+            </div>
+            <div class="d-flex justify-content-between px-2" style="font-size: 11px; color: #121212;">
+                <div class="fw-bold" style="width: 100px; text-align: center; margin-left: -40px;">Shipping Details</div>
+                <div style="width: 100px; text-align: center;">Service Selection</div>
+                <div style="width: 100px; text-align: center;">Additional Details</div>
+                <div style="width: 100px; text-align: center;">Payment</div>
+                <div style="width: 100px; text-align: center; margin-right: -40px;">Confirmation</div>
+            </div>
+        </div>
+
+        <!-- Mobile Progress -->
+        <div class="d-md-none">
+            <div class="progress-container">
+                <div class="progress-node active"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+                <div class="progress-line"></div>
+                <div class="progress-node"></div>
+            </div>
+            <div class="progress-text">Step 1 of 5</div>
+            <div class="progress-title">
+                Shipping Details
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+        </div>
+
+        <!-- Ship From Card -->
+        <div class="shipment-card">
+            <div class="card-title">Ship From</div>
+            
+            <div class="form-floating mb-3">
+                <select class="form-select fw-semibold" id="fromCountry" style="padding-top: 1.625rem; padding-bottom: 0.625rem;">
+                    <option selected>United States</option>
+                    <option>Canada</option>
+                    <option>Mexico</option>
+                </select>
+                <label for="fromCountry" style="font-size: 13px; transform: scale(.85) translateY(-.5rem) translateX(.15rem);">Country or Territory</label>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="fromName" placeholder="Full Name or Company Name*">
+                        <label for="fromName">Full Name or Company Name*</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="fromContact" placeholder="Contact Name">
+                        <label for="fromContact">Contact Name</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="email" class="form-control" id="fromEmail" placeholder="Email*">
+                        <label for="fromEmail">Email*</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="tel" class="form-control" id="fromPhone" placeholder="Phone">
+                        <label for="fromPhone">Phone</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="custom-checkbox">
+                <input type="checkbox" id="fromNotify">
+                <label for="fromNotify">Send me an email whenever my package status changes</label>
+            </div>
+            
+            <div class="form-floating">
+                <input type="text" class="form-control" id="fromAddress" placeholder="Street Address*">
+                <label for="fromAddress">Street Address*</label>
+            </div>
+        </div>
+
+        <!-- Ship To Card -->
+        <div class="shipment-card">
+            <div class="card-title">Ship To</div>
+            
+            <div class="form-floating mb-3">
+                <select class="form-select fw-semibold" id="toCountry" style="padding-top: 1.625rem; padding-bottom: 0.625rem;">
+                    <option selected>United States</option>
+                    <option>Canada</option>
+                    <option>Mexico</option>
+                </select>
+                <label for="toCountry" style="font-size: 13px; transform: scale(.85) translateY(-.5rem) translateX(.15rem);">Country or Territory</label>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="toName" placeholder="Full Name or Company Name*">
+                        <label for="toName">Full Name or Company Name*</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="text" class="form-control" id="toContact" placeholder="Contact Name">
+                        <label for="toContact">Contact Name</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="email" class="form-control" id="toEmail" placeholder="Email">
+                        <label for="toEmail">Email</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-floating">
+                        <input type="tel" class="form-control" id="toPhone" placeholder="Phone">
+                        <label for="toPhone">Phone</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="custom-checkbox">
+                <input type="checkbox" id="toNotify">
+                <label for="toNotify">Send shipping notifications to this email</label>
+            </div>
+            
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="toAddress" placeholder="Street Address*">
+                <label for="toAddress">Street Address*</label>
+            </div>
+            
+            <div class="custom-checkbox m-0">
+                <input type="checkbox" id="toResidential">
+                <label for="toResidential">This is a residential address</label>
+            </div>
+        </div>
+
+        <!-- Packaging Card -->
+        <div class="shipment-card">
+            <div class="card-title">Packaging</div>
+            
+            <div class="toggle-group" style="max-width: 350px;">
+                <div class="toggle-btn active">Standard</div>
+                <div class="toggle-btn">UPS Packaging</div>
+            </div>
+            
+            <p style="font-size: 15px; color: #121212; margin-bottom: 16px; line-height: 1.4;">
+                For most accurate pricing and service selection variety provide all 4 measurements.
+            </p>
+            
+            <div class="custom-checkbox">
+                <input type="checkbox" id="unpackaged">
+                <label for="unpackaged">My shipment is unpackaged or crated.</label>
+            </div>
+            
+            <div class="d-flex align-items-center gap-1 mb-2" style="color: #0060a8; font-size: 15px; cursor: pointer;">
+                Measurement Tips
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            </div>
+            
+            <!-- Box Diagram SVG Placeholder -->
+            <div class="box-svg-container">
+                <!-- Using a stylized SVG to mimic the 3D box -->
+                <svg width="220" height="140" viewBox="0 0 220 140" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M110 20 L170 45 L170 95 L110 125 L50 95 L50 45 Z" fill="#9e6e3c"/>
+                    <path d="M110 20 L50 45 L110 70 L170 45 Z" fill="#b98a58"/>
+                    <path d="M50 45 L110 70 L110 125 L50 95 Z" fill="#a47444"/>
+                    <path d="M110 70 L170 45 L170 95 L110 125 Z" fill="#885b2e"/>
+                    <!-- White Tape -->
+                    <path d="M135 30 L110 70 L110 125 L135 85 Z" fill="rgba(255,255,255,0.8)"/>
+                    <path d="M75 30 L110 70 L135 30 L100 15 Z" fill="rgba(255,255,255,0.9)"/>
+                    
+                    <!-- L W H labels and dashed arrows -->
+                    <!-- L -->
+                    <path d="M40 100 L95 130" stroke="#a3a3a3" stroke-width="1" stroke-dasharray="4,4" fill="none"/>
+                    <path d="M37 97 L40 100 L43 95" stroke="#a3a3a3" stroke-width="1" fill="none"/>
+                    <path d="M92 133 L95 130 L98 128" stroke="#a3a3a3" stroke-width="1" fill="none"/>
+                    <text x="65" y="130" font-family="sans-serif" font-size="14" fill="#121212">L</text>
+                    
+                    <!-- W -->
+                    <path d="M125 130 L180 100" stroke="#a3a3a3" stroke-width="1" stroke-dasharray="4,4" fill="none"/>
+                    <path d="M122 128 L125 130 L128 133" stroke="#a3a3a3" stroke-width="1" fill="none"/>
+                    <path d="M177 95 L180 100 L183 97" stroke="#a3a3a3" stroke-width="1" fill="none"/>
+                    <text x="145" y="130" font-family="sans-serif" font-size="14" fill="#121212">W</text>
+                    
+                    <!-- H -->
+                    <path d="M190 45 L190 95" stroke="#a3a3a3" stroke-width="1" stroke-dasharray="4,4" fill="none"/>
+                    <path d="M187 48 L190 45 L193 48" stroke="#a3a3a3" stroke-width="1" fill="none"/>
+                    <path d="M187 92 L190 95 L193 92" stroke="#a3a3a3" stroke-width="1" fill="none"/>
+                    <text x="200" y="75" font-family="sans-serif" font-size="14" fill="#121212">H</text>
+                </svg>
+            </div>
+            
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="position-relative">
+                        <div class="form-floating">
+                            <input type="number" class="form-control pe-4" id="weight" placeholder="Weight*">
+                            <label for="weight">Weight*</label>
+                        </div>
+                        <div class="input-group-unit">lbs</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="position-relative">
+                        <div class="form-floating">
+                            <input type="number" class="form-control pe-4" id="length" placeholder="Length*">
+                            <label for="length">Length*</label>
+                        </div>
+                        <div class="input-group-unit">in</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="position-relative">
+                        <div class="form-floating">
+                            <input type="number" class="form-control pe-4" id="width" placeholder="Width*">
+                            <label for="width">Width*</label>
+                        </div>
+                        <div class="input-group-unit">in</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="position-relative">
+                        <div class="form-floating">
+                            <input type="number" class="form-control pe-4" id="height" placeholder="Height*">
+                            <label for="height">Height*</label>
+                        </div>
+                        <div class="input-group-unit">in</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Button -->
+        <button class="btn-yellow mt-2">
+            Select a Service
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" width="20" height="20" class="ms-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+    </main>
+
+    <!-- Simple Footer -->
+    <footer class="simple-footer">
+        <!-- Mobile Footer -->
+        <div class="d-md-none">
+            <div class="footer-legal-accordion">
+                Legal
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+            <div class="footer-copyright pt-2 pb-4">
+                Copyright &copy;1994-2026 United Parcel Service of America, Inc. All rights reserved.
+            </div>
+        </div>
+        
+        <!-- Desktop Footer -->
+        <div class="d-none d-md-flex justify-content-between container-fluid" style="max-width: 1392px;">
+            <div class="footer-copyright" style="max-width: 300px; padding-top: 10px;">
+                Copyright &copy;1994-2026 United Parcel Service of America, Inc. All rights reserved.
+            </div>
+            <div class="d-flex flex-wrap justify-content-end" style="font-size: 11px; color: #b0aba8; gap: 12px; max-width: 800px; padding-top: 10px; line-height: 2;">
+                <a href="#" class="text-decoration-none text-white hover-underline">Global Home</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Protect Against Fraud</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Terms and Conditions</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Website Terms of Use</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Your California Privacy Rights</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Privacy Notice</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Cookie Settings</a> | 
+                <a href="#" class="text-decoration-none text-white hover-underline">Do Not Sell or Share My Personal Information</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chat Bubble -->
+    <div class="chat-bubble">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="28" height="28"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple script for the toggle buttons
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

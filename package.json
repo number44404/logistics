@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@capacitor/core": "^8.5.1",
+    "@capacitor/push-notifications": "^8.1.2",
+    "@supabase/supabase-js": "^2.115.0",
+    "pg": "^8.23.0",
+    "puppeteer": "^25.10.0",
+    "web-push": "^3.6.7"
+  }
+}
