@@ -26,6 +26,16 @@ try {
 app.use(express.static(path.join(__dirname, '../frontend')));
 app.use(express.json());
 
+// Block common WordPress/scanner paths so they do not hit the app shell.
+const blockedPrefixes = ['/wp-admin', '/wp-login', '/xmlrpc.php', '/wp-json', '/wp-includes', '/wordpress'];
+app.use((req, res, next) => {
+    const pathName = req.path || '';
+    if (blockedPrefixes.some(prefix => pathName === prefix || pathName.startsWith(prefix + '/'))) {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    next();
+});
+
 // Load push logic
 const { dispatchPushForLog } = require('./push_listener');
 
