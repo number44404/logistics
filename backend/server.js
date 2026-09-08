@@ -99,3 +99,6 @@ app.use((req, res) => {
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+// Start the push notification listener in the same process
+require('./push_listener');
