@@ -24,6 +24,29 @@ try {
 
 // Serve static files from the frontend directory
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.json());
+
+// Load push logic
+const { dispatchPushForLog } = require('./push_listener');
+
+// Webhook endpoint for Serverless deployments (like Vercel)
+app.post('/api/webhook/push', async (req, res) => {
+    try {
+        const payload = req.body;
+        // Supabase Database Webhooks send the new row in `record`
+        const log = payload.record || payload; 
+        
+        if (log && log.event_type) {
+            await dispatchPushForLog(log);
+            res.status(200).send('Push dispatched');
+        } else {
+            res.status(400).send('Invalid payload');
+        }
+    } catch (e) {
+        console.error('Webhook error:', e);
+        res.status(500).send('Error processing webhook');
+    }
+});
 
 // API Routes can go here
 const { createClient } = require('@supabase/supabase-js');
@@ -96,9 +119,10 @@ app.use((req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`Server is running on http://localhost:${PORT}`);
+    });
+}
 
-// Start the push notification listener in the same process
-require('./push_listener');
+module.exports = app;
