@@ -65,9 +65,13 @@
             -webkit-tap-highlight-color: transparent;
         }
         
-        /* TYPOGRAPHY */
+        /* TYPOGRAPHY & COLORS */
         h1, h2, h3, h4, h5, h6 { font-weight: 700; color: var(--ups-brown); }
         .text-muted { color: var(--text-muted) !important; }
+        .bg-ups-brown { background-color: var(--ups-brown) !important; }
+        .bg-ups-yellow { background-color: var(--ups-yellow) !important; }
+        .text-ups-brown { color: var(--ups-brown) !important; }
+        .text-ups-yellow { color: var(--ups-yellow) !important; }
 
         /* TOUCH TARGETS & BUTTONS */
         button, a, .list-item, .nav-btn, .mobile-card[onclick] {
@@ -270,6 +274,16 @@
             </div>
             
             <!-- 2. Active Shipments -->
+            <!-- Push Notification Banner -->
+            <div id="push-permission-banner" class="mx-3 mt-3 mb-2 p-3 bg-warning text-dark rounded shadow-sm d-flex justify-content-between align-items-center d-none">
+                <div>
+                    <span class="material-symbols-rounded align-middle me-1">notifications_active</span>
+                    <strong>Enable Push Notifications</strong>
+                    <div class="small">Get alerted instantly for urgent updates.</div>
+                </div>
+                <button class="btn btn-sm btn-dark" onclick="requestPushManually()">Enable</button>
+            </div>
+            
             <h6 class="ms-3 mt-4 mb-2 text-muted fw-bold small">ACTIVE SHIPMENTS</h6>
             <div class="px-3" id="m-active-shipments">
                 <!-- Injected via JS -->

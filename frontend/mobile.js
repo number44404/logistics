@@ -101,8 +101,13 @@ async function verifyRoleAndLoad(userId) {
         )
         .subscribe();
         
-    // Execute Push Registration Flow securely for authenticated user
-    await requestAndRegisterPush(userId);
+    // Check push permissions, show banner if unprompted, otherwise register automatically
+    if (!window.Capacitor && 'Notification' in window && Notification.permission === 'default') {
+        const banner = document.getElementById('push-permission-banner');
+        if(banner) banner.classList.remove('d-none');
+    } else {
+        await requestAndRegisterPush(userId);
+    }
     
     // Process deep link from closed-state push notification
     const urlParams = new URLSearchParams(window.location.search);
@@ -387,7 +392,6 @@ async function loadPayments() {
 
             const card = document.createElement('div');
             card.className = `mobile-card mb-3 mx-3`;
-            card.style.borderLeft = `6px solid var(--bs-${statusColor.split(' ')[0]})`;
             card.onclick = () => openPayment(p.id, p.amount, tracking, p.receipt_url, p.payment_method, p.status, date);
             
             card.innerHTML = `
@@ -577,8 +581,6 @@ async function loadTickets() {
 function createTicketCard(t, isUnread) {
     const div = document.createElement('div');
     div.className = `mobile-card mx-3 mb-2 px-3 py-3`;
-    if (isUnread) div.style.borderLeft = `6px solid var(--ups-yellow)`;
-    else div.style.borderLeft = `6px solid var(--text-muted)`;
     
     const time = new Date(t.updated_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
     
@@ -813,7 +815,6 @@ function createNotificationCard(n) {
     const card = document.createElement('div');
     card.className = `list-item px-3 py-3 mx-3 mb-2 d-flex flex-column`;
     card.style.background = n.read_status ? 'var(--bg-light)' : 'white';
-    card.style.borderLeft = n.read_status ? '4px solid transparent' : '4px solid var(--ups-blue)';
     card.style.borderBottom = '1px solid var(--border-color)';
     card.style.borderRadius = '8px';
     
@@ -831,7 +832,6 @@ function createNotificationCard(n) {
             await window.supabase.from('notifications_log').update({ read_status: true }).eq('id', n.id);
             n.read_status = true;
             card.style.background = 'var(--bg-light)';
-            card.style.borderLeft = '4px solid transparent';
             
             // Deduct unread counter logic could go here, or just let loadDashboardStats handle it naturally
         }
@@ -1263,5 +1263,19 @@ async function requestAndRegisterPush(userId) {
         }
     } catch (err) {
         console.error('Failed to register push device:', err);
+    }
+}
+
+async function requestPushManually() {
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if (!session) return;
+    
+    // Call the original registration function which handles permission prompting
+    await requestAndRegisterPush(session.user.id);
+    
+    // Hide the banner if permission was granted or denied
+    if (Notification.permission !== 'default') {
+        const banner = document.getElementById('push-permission-banner');
+        if(banner) banner.classList.add('d-none');
     }
 }

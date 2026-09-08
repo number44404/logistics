@@ -1,10 +1,24 @@
 {
+  "name": "logistics-app",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node backend/server.js"
+  },
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "@capacitor/android": "^8.5.1",
     "@capacitor/cli": "^8.5.1",
     "@capacitor/core": "^8.5.1",
     "@capacitor/push-notifications": "^8.1.2",
     "@supabase/supabase-js": "^2.115.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase-admin": "^14.3.0",
     "pg": "^8.23.0",
     "puppeteer": "^25.10.0",
     "web-push": "^3.6.7"

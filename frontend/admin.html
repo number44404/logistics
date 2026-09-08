@@ -1284,7 +1284,6 @@
             // Mobile Card
             const card = document.createElement("div");
             card.className = "shipment-card";
-            card.style.borderLeftColor = p.status === 'verified' ? 'var(--status-delivered-bg)' : (p.status === 'pending_verification' ? 'var(--status-pending-bg)' : 'red');
             card.innerHTML = `
                 <div class="shipment-card-header">
                     <span class="fw-bold">${tracking}</span>
