@@ -46,18 +46,6 @@ if (!SUPABASE_SERVICE_ROLE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-async function startListener() {
-    
-
-    console.log("Subscribing to notifications_log...");
-    supabase
-        .channel('backend-push-dispatcher')
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'notifications_log' },
-            async (payload) => {
-                const log = payload.new;
-                
 async function dispatchPushForLog(log) {
     let targetRoles = [];
     let pushPayload = {};
@@ -105,32 +93,30 @@ async function dispatchPushForLog(log) {
     } else {
         return; // Ignore other events
     }
-    
+
     console.log(`Event detected: ${log.event_type}. Fetching authorized devices...`);
-    
-    // Get all authorized staff for this event
+
     const { data: staffList } = await supabase
         .from('staff_users')
         .select('id, role')
         .in('role', targetRoles);
-        
+
     if (!staffList || staffList.length === 0) return;
     const staffIds = staffList.map(s => s.id);
-    
-    // Get devices for these staff members
+
     const { data: devices } = await supabase
         .from('admin_devices')
         .select('device_token, platform')
         .in('admin_id', staffIds)
         .eq('is_active', true);
-        
+
     if (!devices || devices.length === 0) {
-        console.log("No registered active devices found for target staff.");
+        console.log('No registered active devices found for target staff.');
         return;
     }
-    
+
     console.log(`Dispatching push to ${devices.length} devices...`);
-    
+
     for (const row of devices) {
         try {
             if (row.platform === 'android') {
@@ -154,19 +140,16 @@ async function dispatchPushForLog(log) {
                 };
                 await getMessaging().send(fcmPayload);
             } else {
-                // Legacy/PWA Web Push
                 const sub = JSON.parse(row.device_token);
                 await webpush.sendNotification(sub, JSON.stringify(pushPayload));
             }
         } catch (e) {
-            console.error("Failed to push to device:", e.statusCode || e.code || e.message);
-            
-            // Handle dead Web Push tokens
+            console.error('Failed to push to device:', e.statusCode || e.code || e.message);
+
             if (e.statusCode === 410 || e.statusCode === 404) {
                 await supabase.from('admin_devices').update({ is_active: false }).eq('device_token', row.device_token);
             }
-            
-            // Handle dead Android FCM tokens
+
             if (e.code === 'messaging/registration-token-not-registered' || e.code === 'messaging/invalid-registration-token') {
                 await supabase.from('admin_devices').update({ is_active: false }).eq('device_token', row.device_token);
             }
@@ -175,23 +158,23 @@ async function dispatchPushForLog(log) {
 }
 
 async function startListener() {
-    console.log("Subscribing to notifications_log...");
+    console.log('Subscribing to notifications_log...');
     supabase
         .channel('backend-push-dispatcher')
         .on(
             'postgres_changes',
             { event: 'INSERT', schema: 'public', table: 'notifications_log' },
             async (payload) => {
-                await dispatchPushForLog(payload.new);
+                if (payload && payload.new) {
+                    await dispatchPushForLog(payload.new);
+                }
             }
         )
         .subscribe();
 }
 
-// Automatically start listener if not running in a Vercel-like serverless environment
-// We check for typical serverless environment variables
 if (!process.env.VERCEL) {
     startListener();
 }
 
-module.exports = { dispatchPushForLog };
+module.exports = { dispatchPushForLog, startListener };
