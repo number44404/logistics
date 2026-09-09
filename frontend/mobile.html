@@ -509,12 +509,50 @@
                 </div>
                 <div class="modal-body p-4">
                     <input type="hidden" id="assign-request-id">
-                    <div class="mb-3">
+                    
+                    <!-- Toggle Buttons -->
+                    <div class="btn-group w-100 mb-4" role="group">
+                        <input type="radio" class="btn-check" name="assign-mode" id="assign-existing" value="existing" checked>
+                        <label class="btn btn-outline-ups w-50 fw-bold small" for="assign-existing">Use Existing</label>
+                        
+                        <input type="radio" class="btn-check" name="assign-mode" id="assign-manual" value="manual">
+                        <label class="btn btn-outline-ups w-50 fw-bold small" for="assign-manual">Input Manual</label>
+                    </div>
+                    
+                    <!-- Mode 1: Select Existing Account -->
+                    <div id="assign-existing-form" class="mb-3">
                         <label class="fw-bold mb-2 small text-uppercase">Select Account</label>
                         <select class="form-select rounded" id="assign-account-select">
                             <option value="">Loading accounts...</option>
                         </select>
                     </div>
+                    
+                    <!-- Mode 2: Manual Input Form -->
+                    <div id="assign-manual-form" class="d-none">
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Bank Name</label>
+                            <input type="text" class="form-control rounded" id="assign-bank-name" placeholder="e.g., Chase, Wells Fargo">
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Name</label>
+                            <input type="text" class="form-control rounded" id="assign-account-name" placeholder="Business name or account holder">
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Number</label>
+                            <input type="text" class="form-control rounded" id="assign-account-number" placeholder="Bank account number">
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Type</label>
+                            <select class="form-select rounded" id="assign-account-type">
+                                <option value="">Select type...</option>
+                                <option value="Checking">Checking</option>
+                                <option value="Savings">Savings</option>
+                                <option value="Money Market">Money Market</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <button type="button" class="btn btn-ups w-100 fw-bold py-2" onclick="confirmAssignAccount()">Assign Account</button>
                 </div>
             </div>

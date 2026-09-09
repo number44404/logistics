@@ -614,6 +614,17 @@ async function openAssignAccountModal(requestId) {
     const select = document.getElementById('assign-account-select');
     document.getElementById('assign-request-id').value = requestId;
     
+    // Reset to "existing" mode
+    document.getElementById('assign-existing').checked = true;
+    document.getElementById('assign-existing-form').classList.remove('d-none');
+    document.getElementById('assign-manual-form').classList.add('d-none');
+    
+    // Clear manual form
+    document.getElementById('assign-bank-name').value = '';
+    document.getElementById('assign-account-name').value = '';
+    document.getElementById('assign-account-number').value = '';
+    document.getElementById('assign-account-type').value = '';
+    
     // Load available accounts
     try {
         const { data: accounts, error } = await window.supabase
@@ -626,33 +637,85 @@ async function openAssignAccountModal(requestId) {
         
         if (!accounts || accounts.length === 0) {
             select.innerHTML = '<option value="">No accounts configured. Please add one first.</option>';
-            return;
+        } else {
+            select.innerHTML = '<option value="">— Select Account —</option>';
+            accounts.forEach(acc => {
+                const option = document.createElement('option');
+                option.value = acc.id;
+                option.textContent = `${acc.bank_name} - ${acc.account_name} (${acc.account_number})`;
+                select.appendChild(option);
+            });
         }
-        
-        select.innerHTML = '<option value="">— Select Account —</option>';
-        accounts.forEach(acc => {
-            const option = document.createElement('option');
-            option.value = acc.id;
-            option.textContent = `${acc.bank_name} - ${acc.account_name} (${acc.account_number})`;
-            select.appendChild(option);
-        });
     } catch (err) {
         select.innerHTML = `<option value="">Error loading accounts: ${err.message}</option>`;
     }
+    
+    // Toggle between modes
+    document.querySelectorAll('input[name="assign-mode"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            if (e.target.value === 'existing') {
+                document.getElementById('assign-existing-form').classList.remove('d-none');
+                document.getElementById('assign-manual-form').classList.add('d-none');
+            } else {
+                document.getElementById('assign-existing-form').classList.add('d-none');
+                document.getElementById('assign-manual-form').classList.remove('d-none');
+            }
+        });
+    });
     
     new bootstrap.Modal(document.getElementById('assignAccountModal')).show();
 }
 
 async function confirmAssignAccount() {
     const requestId = document.getElementById('assign-request-id').value;
-    const accountId = document.getElementById('assign-account-select').value;
+    const mode = document.querySelector('input[name="assign-mode"]:checked').value;
     
-    if (!requestId || !accountId) {
-        showToast('Please select an account');
+    if (!requestId) {
+        showToast('Request ID missing');
         return;
     }
     
+    let accountId = null;
+    
     try {
+        // Handle both modes
+        if (mode === 'existing') {
+            // Mode 1: Select existing account
+            accountId = document.getElementById('assign-account-select').value;
+            if (!accountId) {
+                showToast('Please select an account');
+                return;
+            }
+        } else {
+            // Mode 2: Manual input - create account on the fly
+            const bankName = document.getElementById('assign-bank-name').value.trim();
+            const accountName = document.getElementById('assign-account-name').value.trim();
+            const accountNumber = document.getElementById('assign-account-number').value.trim();
+            const accountType = document.getElementById('assign-account-type').value;
+            
+            if (!bankName || !accountName || !accountNumber || !accountType) {
+                showToast('Please fill all fields');
+                return;
+            }
+            
+            // Create a temporary account for this assignment
+            const { data: newAccount, error: createError } = await window.supabase
+                .from('bank_accounts')
+                .insert([{
+                    bank_name: bankName,
+                    account_name: accountName,
+                    account_number: accountNumber,
+                    account_type: accountType,
+                    is_active: false,
+                    created_at: new Date().toISOString()
+                }])
+                .select()
+                .single();
+            
+            if (createError) throw createError;
+            accountId = newAccount.id;
+        }
+        
         // Get payment details for notification
         const { data: paymentRequest } = await window.supabase
             .from('bank_account_requests')
@@ -660,7 +723,8 @@ async function confirmAssignAccount() {
             .eq('id', requestId)
             .single();
         
-        const { error } = await window.supabase
+        // Assign the account (either selected or newly created)
+        const { error: assignError } = await window.supabase
             .from('bank_account_requests')
             .update({
                 assigned_bank_account_id: accountId,
@@ -669,7 +733,7 @@ async function confirmAssignAccount() {
             })
             .eq('id', requestId);
         
-        if (error) throw error;
+        if (assignError) throw assignError;
         
         // Send push notification to receiver about account assignment
         const shipmentId = paymentRequest?.shipment_id;
