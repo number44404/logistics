@@ -120,6 +120,44 @@ app.get('/api/payment-account', async (req, res) => {
     }
 });
 
+app.get('/api/payment-method-assignment', async (req, res) => {
+    const { request_id, shipment_id, method_type } = req.query;
+    if (!request_id || !shipment_id || !method_type) {
+        return res.status(400).json({ error: 'Missing request_id, shipment_id or method_type' });
+    }
+
+    if (!supabase) {
+        return res.status(500).json({ error: 'Supabase client not initialized' });
+    }
+
+    try {
+        const { data: request, error: reqError } = await supabase
+            .from('payment_method_requests')
+            .select('*')
+            .eq('id', request_id)
+            .eq('shipment_id', shipment_id)
+            .eq('method_type', method_type)
+            .single();
+
+        if (reqError || !request) {
+            return res.status(404).json({ error: 'Payment method request not found' });
+        }
+
+        if (request.status !== 'assigned' && request.status !== 'sent') {
+            return res.status(403).json({ error: 'Payment method details not yet assigned' });
+        }
+
+        if (!request.assigned_value) {
+            return res.status(404).json({ error: 'Assigned payment method value missing' });
+        }
+
+        res.json({ assigned_value: request.assigned_value, method_type: request.method_type });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/status', (req, res) => {
     res.json({ status: 'Backend is running!' });
 });

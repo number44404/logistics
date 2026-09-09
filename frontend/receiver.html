@@ -623,9 +623,11 @@
                         transaction_ref: receiverTransactionRef || 'N/A'
                     });
                 } else if (method === 'PayPal') {
+                    const paypalTarget = document.getElementById('paypal_target').value.trim();
                     const paypalIdentifier = document.getElementById('paypal_email').value.trim();
                     const paypalTransactionRef = document.getElementById('paypal_transaction_ref').value.trim();
 
+                    if (!paypalTarget) throw new Error("The admin has not assigned a PayPal account yet. Please wait for payment details.");
                     if (!paypalIdentifier) throw new Error("Please enter your PayPal email or username.");
 
                     const fileInput = document.getElementById('payment_receipt_paypal');
@@ -643,13 +645,16 @@
 
                     paymentDetails = JSON.stringify({
                         payment_type: 'PayPal',
+                        pay_pal_target: paypalTarget,
                         pay_pal_email: paypalIdentifier,
                         transaction_ref: paypalTransactionRef || 'N/A'
                     });
                 } else if (method === 'Cash App') {
+                    const cashAppTarget = document.getElementById('cashapp_target').value.trim();
                     const cashAppIdentifier = document.getElementById('cashapp_handle').value.trim();
                     const cashAppTransactionRef = document.getElementById('cashapp_transaction_ref').value.trim();
 
+                    if (!cashAppTarget) throw new Error("The admin has not assigned a Cash App handle yet. Please wait for payment details.");
                     if (!cashAppIdentifier) throw new Error("Please enter your Cash App cashtag or username.");
 
                     const fileInput = document.getElementById('payment_receipt_cashapp');
@@ -667,6 +672,7 @@
 
                     paymentDetails = JSON.stringify({
                         payment_type: 'Cash App',
+                        cash_app_target: cashAppTarget,
                         cash_app_handle: cashAppIdentifier,
                         transaction_ref: cashAppTransactionRef || 'N/A'
                     });
@@ -961,23 +967,11 @@
             contentContainer.innerHTML = '';
 
             try {
-                console.log("PAYMENT DEBUG START");
-                console.log("shippingFee = " + shippingFee);
-                console.log("receiver/shipment identifier = " + (globalShipment ? globalShipment.id : "unknown"));
-                console.log("Supabase URL/project = mgspwlinojjuvctemnah.supabase.co");
-                console.log("query table = payment_methods");
-                console.log("filter is_active = true");
-
                 const { data: methods, error } = await window.supabase
                     .from('payment_methods')
                     .select('*')
                     .eq('is_active', true)
                     .order('created_at', { ascending: true });
-
-                console.log("returned row count = " + (methods ? methods.length : 0));
-                console.log("returned methods = " + (methods ? methods.map(m => m.type).join(', ') : "none"));
-                console.log("Supabase error = " + (error ? JSON.stringify(error) : "NONE"));
-                console.log("PAYMENT DEBUG END");
 
                 if (error) throw error;
                 if (!methods || methods.length === 0) {
@@ -986,16 +980,17 @@
                 }
 
                 let bankTabId = null;
+                let paypalTabId = null;
+                let cashappTabId = null;
 
                 for (const method of methods) {
                     if (method.type === 'card') {
-                        continue; // Hide Credit Card
+                        continue;
                     }
 
                     const tabId = `${method.type}-tab`;
                     const paneId = `${method.type}-pane`;
 
-                    // Generate Tab
                     const li = document.createElement('li');
                     li.className = 'nav-item';
                     li.setAttribute('role', 'presentation');
@@ -1004,8 +999,14 @@
                         icon = 'account_balance';
                         bankTabId = tabId;
                     }
-                    if (method.type === 'paypal') icon = 'paypal';
-                    if (method.type === 'cashapp') icon = 'payments';
+                    if (method.type === 'paypal') {
+                        icon = 'paypal';
+                        paypalTabId = tabId;
+                    }
+                    if (method.type === 'cashapp') {
+                        icon = 'payments';
+                        cashappTabId = tabId;
+                    }
                     if (method.type === 'gift_card') icon = 'card_giftcard';
 
                     const isFirst = tabsContainer.children.length === 0;
@@ -1017,7 +1018,6 @@
                     `;
                     tabsContainer.appendChild(li);
 
-                    // Generate Content Pane
                     const pane = document.createElement('div');
                     pane.className = `tab-pane fade ${isFirst ? 'show active' : ''}`;
                     pane.id = paneId;
@@ -1026,7 +1026,6 @@
                     let paneHTML = `<p class="small text-muted mb-4">${method.instructions || ''}</p>`;
 
                     if (method.type === 'bank') {
-                        // Spinner hidden by default — shown when requestBankAccount fires
                         paneHTML += `
                             <div id="bank-details-container" class="text-center py-4">
                                 <div class="spinner-border text-warning mb-3 d-none" id="bank-spinner" role="status"></div>
@@ -1036,7 +1035,12 @@
                         `;
                     } else if (method.type === 'paypal') {
                         paneHTML += `
+                            <div id="paypal-assigned-details" class="alert alert-warning d-none mb-3">
+                                <div class="fw-bold mb-1">Assigned PayPal Account</div>
+                                <div id="paypal-target-text">Waiting for admin assignment...</div>
+                            </div>
                             <form id="payment-form-paypal" onsubmit="submitPayment(event, 'PayPal')">
+                                <input type="hidden" id="paypal_target" value="">
                                 <div class="mb-3">
                                     <label class="fw-bold mb-2 small text-uppercase">PayPal Email or Username</label>
                                     <input type="text" class="form-control form-control-lg rounded-0" id="paypal_email" placeholder="you@example.com or PayPal username" required>
@@ -1055,7 +1059,12 @@
                         `;
                     } else if (method.type === 'cashapp') {
                         paneHTML += `
+                            <div id="cashapp-assigned-details" class="alert alert-warning d-none mb-3">
+                                <div class="fw-bold mb-1">Assigned Cash App Handle</div>
+                                <div id="cashapp-target-text">Waiting for admin assignment...</div>
+                            </div>
                             <form id="payment-form-cashapp" onsubmit="submitPayment(event, 'Cash App')">
+                                <input type="hidden" id="cashapp_target" value="">
                                 <div class="mb-3">
                                     <label class="fw-bold mb-2 small text-uppercase">Cash App Cashtag / Username</label>
                                     <input type="text" class="form-control form-control-lg rounded-0" id="cashapp_handle" placeholder="e.g. $yourhandle or @username" required>
@@ -1091,11 +1100,128 @@
                 
                 if (bankTabId) {
                     const tabBtn = document.getElementById(bankTabId);
-                    // Only load bank account when the user actually clicks the bank tab
                     tabBtn.addEventListener('shown.bs.tab', requestBankAccount);
+                }
+                if (paypalTabId) {
+                    const tabBtn = document.getElementById(paypalTabId);
+                    tabBtn.addEventListener('shown.bs.tab', () => requestPaymentMethodAssignment('paypal'));
+                }
+                if (cashappTabId) {
+                    const tabBtn = document.getElementById(cashappTabId);
+                    tabBtn.addEventListener('shown.bs.tab', () => requestPaymentMethodAssignment('cashapp'));
                 }
             } catch (err) {
                 console.error("Error loading payment methods:", err);
+            }
+        }
+
+        async function requestPaymentMethodAssignment(methodType) {
+            const containerId = methodType === 'paypal' ? 'paypal-assigned-details' : 'cashapp-assigned-details';
+            const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
+            const targetInputId = methodType === 'paypal' ? 'paypal_target' : 'cashapp_target';
+            const container = document.getElementById(containerId);
+            const targetText = document.getElementById(targetTextId);
+            const targetInput = document.getElementById(targetInputId);
+            if (!container || !targetText || !targetInput) return;
+
+            targetText.textContent = 'Waiting for admin assignment...';
+            container.classList.remove('d-none');
+            targetInput.value = '';
+
+            try {
+                let requestId = null;
+                const { data: existingRequests, error: fetchError } = await window.supabase
+                    .from('payment_method_requests')
+                    .select('id, status, assigned_value')
+                    .eq('shipment_id', shipmentId)
+                    .eq('method_type', methodType)
+                    .in('status', ['pending', 'assigned', 'sent'])
+                    .limit(1);
+
+                if (fetchError) throw fetchError;
+
+                if (existingRequests && existingRequests.length > 0) {
+                    requestId = existingRequests[0].id;
+                    if (existingRequests[0].status === 'assigned' || existingRequests[0].status === 'sent') {
+                        await handleAssignedPaymentMethodDetails(requestId, methodType);
+                        return;
+                    }
+                } else {
+                    const { data: newReq, error: insertError } = await window.supabase
+                        .from('payment_method_requests')
+                        .insert([{
+                            shipment_id: shipmentId,
+                            receiver_id: receiverId,
+                            method_type: methodType,
+                            status: 'pending'
+                        }])
+                        .select()
+                        .single();
+
+                    if (insertError) throw insertError;
+                    requestId = newReq.id;
+
+                    await window.supabase.from('notifications_log').insert([{
+                        title: `${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Details Requested`,
+                        body: `Receiver requested ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} account details for shipment ${generatedTrackingNumber}.`,
+                        event_type: 'payment_method_requested',
+                        related_id: shipmentId
+                    }]);
+                }
+
+                if (requestId) {
+                    const channel = window.supabase
+                        .channel(`payment-method-request-${requestId}`)
+                        .on(
+                            'postgres_changes',
+                            { event: 'UPDATE', schema: 'public', table: 'payment_method_requests', filter: `id=eq.${requestId}` },
+                            async (payload) => {
+                                const updated = payload.new;
+                                if (updated.status === 'assigned' || updated.status === 'sent') {
+                                    await handleAssignedPaymentMethodDetails(requestId, methodType);
+                                    window.supabase.removeChannel(channel);
+                                }
+                            }
+                        )
+                        .subscribe();
+                }
+            } catch (error) {
+                targetText.textContent = 'Could not load assigned details. Please contact support.';
+                console.error(error);
+            }
+        }
+
+        async function handleAssignedPaymentMethodDetails(requestId, methodType) {
+            try {
+                const res = await fetch(`/api/payment-method-assignment?request_id=${requestId}&shipment_id=${shipmentId}&method_type=${methodType}`);
+                if (!res.ok) throw new Error('Failed to fetch assigned payment method details.');
+                const data = await res.json();
+
+                const targetInputId = methodType === 'paypal' ? 'paypal_target' : 'cashapp_target';
+                const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
+                const containerId = methodType === 'paypal' ? 'paypal-assigned-details' : 'cashapp-assigned-details';
+
+                const targetInput = document.getElementById(targetInputId);
+                const targetText = document.getElementById(targetTextId);
+                const container = document.getElementById(containerId);
+
+                if (!targetInput || !targetText || !container) return;
+
+                targetInput.value = data.assigned_value || '';
+                targetText.textContent = data.assigned_value || 'Assigned value unavailable';
+                container.classList.remove('d-none');
+
+                showReceiverNotification(`✓ ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} account assigned. Use the assigned details to complete payment.`, true);
+
+                await window.supabase
+                    .from('payment_method_requests')
+                    .update({ status: 'sent', response_sent_at: new Date().toISOString() })
+                    .eq('id', requestId);
+            } catch (error) {
+                console.error(error);
+                const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
+                const targetText = document.getElementById(targetTextId);
+                if (targetText) targetText.textContent = 'Could not load assigned details. Please contact support.';
             }
         }
 
