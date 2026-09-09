@@ -435,7 +435,6 @@ async function sendReply(e) {
         if (error) throw error;
         
         input.value = '';
-        const fileInput = document.getElementById('reply-image');
         if (fileInput) fileInput.value = '';
         
         // Auto-assign to me if unassigned and replying
