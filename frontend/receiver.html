@@ -1035,8 +1035,11 @@
                         `;
                     } else if (method.type === 'paypal') {
                         paneHTML += `
-                            <div id="paypal-assigned-details" class="alert alert-warning d-none mb-3">
-                                <div class="fw-bold mb-1">Assigned PayPal Account</div>
+                            <div id="paypal-assigned-details" class="alert alert-warning mb-3">
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                    <div class="spinner-border spinner-border-sm text-warning" role="status" aria-label="Loading assigned PayPal details"></div>
+                                    <div class="fw-bold mb-0">Assigned PayPal Account</div>
+                                </div>
                                 <div id="paypal-target-text">Waiting for admin assignment...</div>
                             </div>
                             <form id="payment-form-paypal" onsubmit="submitPayment(event, 'PayPal')">
@@ -1059,8 +1062,11 @@
                         `;
                     } else if (method.type === 'cashapp') {
                         paneHTML += `
-                            <div id="cashapp-assigned-details" class="alert alert-warning d-none mb-3">
-                                <div class="fw-bold mb-1">Assigned Cash App Handle</div>
+                            <div id="cashapp-assigned-details" class="alert alert-warning mb-3">
+                                <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+                                    <div class="spinner-border spinner-border-sm text-warning" role="status" aria-label="Loading assigned Cash App details"></div>
+                                    <div class="fw-bold mb-0">Assigned Cash App Handle</div>
+                                </div>
                                 <div id="cashapp-target-text">Waiting for admin assignment...</div>
                             </div>
                             <form id="payment-form-cashapp" onsubmit="submitPayment(event, 'Cash App')">
@@ -1125,7 +1131,6 @@
             if (!container || !targetText || !targetInput) return;
 
             targetText.textContent = 'Waiting for admin assignment...';
-            container.classList.remove('d-none');
             targetInput.value = '';
 
             try {
@@ -1186,7 +1191,7 @@
                         .subscribe();
                 }
             } catch (error) {
-                targetText.textContent = 'Could not load assigned details. Please contact support.';
+                targetText.textContent = 'Waiting for admin assignment...';
                 console.error(error);
             }
         }
@@ -1194,7 +1199,12 @@
         async function handleAssignedPaymentMethodDetails(requestId, methodType) {
             try {
                 const res = await fetch(`/api/payment-method-assignment?request_id=${requestId}&shipment_id=${shipmentId}&method_type=${methodType}`);
-                if (!res.ok) throw new Error('Failed to fetch assigned payment method details.');
+                if (!res.ok) {
+                    const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
+                    const targetText = document.getElementById(targetTextId);
+                    if (targetText) targetText.textContent = 'Waiting for admin assignment...';
+                    return;
+                }
                 const data = await res.json();
 
                 const targetInputId = methodType === 'paypal' ? 'paypal_target' : 'cashapp_target';
@@ -1207,9 +1217,13 @@
 
                 if (!targetInput || !targetText || !container) return;
 
+                if (!data.assigned_value) {
+                    targetText.textContent = 'Waiting for admin assignment...';
+                    return;
+                }
+
                 targetInput.value = data.assigned_value || '';
                 targetText.textContent = data.assigned_value || 'Assigned value unavailable';
-                container.classList.remove('d-none');
 
                 showReceiverNotification(`✓ ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} account assigned. Use the assigned details to complete payment.`, true);
 
@@ -1221,7 +1235,7 @@
                 console.error(error);
                 const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
                 const targetText = document.getElementById(targetTextId);
-                if (targetText) targetText.textContent = 'Could not load assigned details. Please contact support.';
+                if (targetText) targetText.textContent = 'Waiting for admin assignment...';
             }
         }
 
