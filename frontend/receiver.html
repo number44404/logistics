@@ -35,6 +35,17 @@
             color: var(--ups-brown) !important;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
+        /* Notification animations */
+        #notification-alert {
+            cursor: pointer;
+            user-select: none;
+            touch-action: pan-y;
+            transition: all 0.3s ease;
+        }
+        @keyframes slideOutNotification {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-100%); }
+        }
     </style>
 </head>
 <body>
@@ -48,6 +59,14 @@
     <div class="container mt-5" id="app" style="display: none;">
         <div class="row justify-content-center">
             <div class="col-12 col-md-8 col-lg-6">
+                <!-- NOTIFICATION ALERTS -->
+                <div id="notification-container" class="mb-3" style="display: none;">
+                    <div id="notification-alert" class="alert alert-success d-flex align-items-center gap-2 mb-0" role="alert">
+                        <span class="material-symbols-rounded">check_circle</span>
+                        <div id="notification-text">Bank account details have been sent to you!</div>
+                    </div>
+                </div>
+
                 <!-- ERROR STATE -->
                 <div id="error-state" class="card shadow-sm border-0 d-none text-center p-5">
                     <span class="material-symbols-rounded text-danger mx-auto mb-3" style="font-size: 4rem;">error</span>
@@ -260,6 +279,98 @@
         let generatedTrackingNumber = null;
         let globalShipment = null;
         let receiverId = null;
+
+        // Helper: Play notification sound
+        function playReceiverNotificationSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                // Three ascending beeps: 600Hz, 800Hz, 1000Hz
+                oscillator.frequency.value = 600;
+                oscillator.type = 'sine';
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.15);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.2);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.2);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.35);
+                oscillator.start(audioContext.currentTime + 0.2);
+                oscillator.stop(audioContext.currentTime + 0.35);
+                
+                oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.4);
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.4);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.55);
+                oscillator.start(audioContext.currentTime + 0.4);
+                oscillator.stop(audioContext.currentTime + 0.55);
+            } catch (e) {
+                console.log('Audio not supported:', e.message);
+            }
+        }
+
+        // Helper: Vibrate device
+        function vibrateReceiverDevice(pattern = [100, 50, 100]) {
+            if (navigator.vibrate) {
+                navigator.vibrate(pattern);
+            }
+        }
+
+        // Show swipable notification with sound/vibration
+        function showReceiverNotification(message, enableSound = false) {
+            const notificationContainer = document.getElementById('notification-container');
+            const notificationAlert = document.getElementById('notification-alert');
+            const notificationText = document.getElementById('notification-text');
+            
+            notificationText.textContent = message;
+            notificationContainer.style.display = 'block';
+            
+            // Touch tracking for swipe
+            let touchStartX = 0;
+            let touchEndX = 0;
+            
+            const dismissHandler = () => {
+                notificationContainer.style.animation = 'slideOutNotification 0.3s ease forwards';
+                setTimeout(() => {
+                    notificationContainer.style.display = 'none';
+                    notificationContainer.style.animation = '';
+                }, 300);
+            };
+            
+            // Remove old listeners
+            notificationAlert.replaceWith(notificationAlert.cloneNode(true));
+            const newAlert = document.getElementById('notification-alert');
+            
+            newAlert.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { once: false });
+            
+            newAlert.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                if (touchStartX - touchEndX > 50 || touchEndX - touchStartX > 50) {
+                    dismissHandler();
+                }
+            }, { once: false });
+            
+            newAlert.addEventListener('click', dismissHandler);
+            
+            if (enableSound) {
+                playReceiverNotificationSound();
+                vibrateReceiverDevice([50, 30, 50, 30, 100]);
+            }
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (notificationContainer.style.display === 'block') {
+                    dismissHandler();
+                }
+            }, 5000);
+        }
 
         document.addEventListener('DOMContentLoaded', async () => {
             try {
@@ -992,6 +1103,9 @@
                 if (!res.ok) throw new Error("Failed to fetch assigned bank account.");
                 const account = await res.json();
                 
+                // Show notification with sound and vibration
+                showReceiverNotification(`✓ Bank account has been assigned! Transfer details sent by staff.`, true);
+                
                 // Update status to 'sent'
                 await window.supabase
                     .from('bank_account_requests')
@@ -1002,7 +1116,7 @@
                 const container = document.getElementById('bank-details-container');
                 container.innerHTML = `
                     <div class="mb-4 text-start">
-                        <div class="p-3 bg-light border">
+                        <div class="p-3 bg-light border border-success" style="border-left: 4px solid #28a745 !important;">
                             <div class="mb-2"><strong class="small text-uppercase text-muted">Bank Name</strong><br><span class="fs-5">${account.bank_name}</span></div>
                             <div class="mb-2"><strong class="small text-uppercase text-muted">Account Name</strong><br><span class="fs-5">${account.account_name}</span></div>
                             <div class="mb-0"><strong class="small text-uppercase text-muted">Account Number</strong><br><span class="fs-5 fw-bold text-dark" style="letter-spacing: 1px;">${account.account_number}</span></div>

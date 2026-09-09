@@ -228,9 +228,14 @@
             font-weight: 500;
             text-align: center;
             animation: fadein 0.3s, fadeout 0.3s 2.7s;
+            cursor: pointer;
+            user-select: none;
+            touch-action: pan-y;
         }
         @keyframes fadein { from {opacity: 0; transform: translateY(-20px);} to {opacity: 1; transform: translateY(0);} }
         @keyframes fadeout { from {opacity: 1;} to {opacity: 0;} }
+        @keyframes slideOutLeft { from {opacity: 1; transform: translateX(0);} to {opacity: 0; transform: translateX(-100%);} }
+        @keyframes slideOutRight { from {opacity: 1; transform: translateX(0);} to {opacity: 0; transform: translateX(100%);} }
     </style>
 </head>
 <body>

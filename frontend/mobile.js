@@ -182,13 +182,90 @@ async function logout() {
     window.location.reload();
 }
 
-function showToast(message) {
+// Helper: Play notification sound (Web Audio API)
+function playNotificationSound() {
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Two beeps: 800Hz then 600Hz
+        oscillator.frequency.value = 800;
+        oscillator.type = 'sine';
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.1);
+        
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime + 0.15);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.25);
+        oscillator.start(audioContext.currentTime + 0.15);
+        oscillator.stop(audioContext.currentTime + 0.25);
+    } catch (e) {
+        console.log('Audio not supported:', e.message);
+    }
+}
+
+// Helper: Vibrate device (Vibration API)
+function vibrateDevice(pattern = [100, 50, 100]) {
+    if (navigator.vibrate) {
+        navigator.vibrate(pattern);
+    }
+}
+
+// Enhanced Toast with swipe-to-dismiss
+function showToast(message, enableSound = false) {
     const container = document.getElementById('toast-container');
     const toast = document.createElement('div');
     toast.className = 'toast-custom';
     toast.textContent = message;
+    
+    // Touch tracking for swipe
+    let touchStartX = 0;
+    let touchEndX = 0;
+    
+    toast.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    }, false);
+    
+    toast.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        if (touchStartX - touchEndX > 50) { // Swiped left
+            toast.style.animation = 'slideOutLeft 0.3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        } else if (touchEndX - touchStartX > 50) { // Swiped right
+            toast.style.animation = 'slideOutRight 0.3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, false);
+    
+    // Click to dismiss
+    toast.addEventListener('click', () => {
+        toast.style.animation = 'fadeout 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+    });
+    
     container.appendChild(toast);
+    
+    // Optional: play sound and vibrate
+    if (enableSound) {
+        playNotificationSound();
+        vibrateDevice([50, 30, 50]);
+    }
+    
+    // Auto-dismiss after 2.7s
+    const timeout = setTimeout(() => {
+        if (toast.parentElement) {
+            toast.style.animation = 'fadeout 0.3s ease forwards';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 2700);
 }
+
 
 function switchTab(tabId) {
     // Strictly enforce Role-Based Access Control on navigation
@@ -576,6 +653,13 @@ async function confirmAssignAccount() {
     }
     
     try {
+        // Get payment details for notification
+        const { data: paymentRequest } = await window.supabase
+            .from('bank_account_requests')
+            .select('shipment_id, amount')
+            .eq('id', requestId)
+            .single();
+        
         const { error } = await window.supabase
             .from('bank_account_requests')
             .update({
@@ -587,7 +671,21 @@ async function confirmAssignAccount() {
         
         if (error) throw error;
         
-        showToast('Bank account assigned! Receiver has been notified.');
+        // Send push notification to receiver about account assignment
+        const shipmentId = paymentRequest?.shipment_id;
+        const amount = paymentRequest?.amount || '0.00';
+        
+        if (shipmentId) {
+            await window.supabase.from('notifications_log').insert([{
+                title: 'Bank Account Details Assigned',
+                body: `Your bank account details have been assigned for this payment. Amount: $${parseFloat(amount).toFixed(2)}.`,
+                event_type: 'bank_account_assigned',
+                related_id: shipmentId
+            }]);
+        }
+        
+        // Success toast WITH sound and vibration
+        showToast('✓ Bank account assigned! Receiver notified.', true);
         bootstrap.Modal.getInstance(document.getElementById('assignAccountModal')).hide();
         bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
         await loadPayments();

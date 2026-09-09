@@ -18,7 +18,9 @@ CREATE TABLE shipments (
 );
 
 -- 2. Create the tracking_events table
-CREATE TABLE tracking_events (
+CREATE TABLE tracking_events (Option 3: Add Sound + Vibration to Push (WhatsApp-style)
+
+
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     shipment_id UUID REFERENCES shipments(id) ON DELETE CASCADE,
     location VARCHAR,
