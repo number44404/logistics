@@ -1,10 +1,47 @@
 let activePaymentId = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const form = document.getElementById('login-form');
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submit-auth-btn');
+            btn.disabled = true;
+            btn.textContent = 'Verifying...';
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                if (!window.supabase || !window.supabase.auth) {
+                    throw new Error('Supabase not initialized. Please reload the app.');
+                }
+
+                const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                
+                await verifyRoleAndLoad(data.user.id);
+                document.getElementById('login-overlay').style.display = 'none';
+            } catch (err) {
+                const errDiv = document.getElementById('login-error');
+                errDiv.textContent = err.message;
+                errDiv.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Sign In';
+            }
+        });
+    }
+
     await checkAuth();
 });
 
 async function checkAuth() {
+    if (!window.supabase || !window.supabase.auth) {
+        document.getElementById('login-overlay').style.display = 'flex';
+        return;
+    }
+
     const { data: { session } } = await window.supabase.auth.getSession();
     if (session) {
         document.getElementById('login-overlay').style.display = 'none';
@@ -13,31 +50,6 @@ async function checkAuth() {
         document.getElementById('login-overlay').style.display = 'flex';
     }
 }
-
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('submit-auth-btn');
-    btn.disabled = true;
-    btn.textContent = 'Verifying...';
-    
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    try {
-        const { data, error } = await window.supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        
-        await verifyRoleAndLoad(data.user.id);
-        document.getElementById('login-overlay').style.display = 'none';
-    } catch (err) {
-        const errDiv = document.getElementById('login-error');
-        errDiv.textContent = err.message;
-        errDiv.classList.remove('d-none');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
-    }
-});
 
 let currentStaffRole = null;
 
@@ -611,110 +623,51 @@ function openBankRequest(id, tracking, amount, status, date, receiver) {
 }
 
 async function openAssignAccountModal(requestId) {
-    const select = document.getElementById('assign-account-select');
     document.getElementById('assign-request-id').value = requestId;
     
-    // Reset to "existing" mode
-    document.getElementById('assign-existing').checked = true;
-    document.getElementById('assign-existing-form').classList.remove('d-none');
-    document.getElementById('assign-manual-form').classList.add('d-none');
-    
-    // Clear manual form
+    // Clear form fields
     document.getElementById('assign-bank-name').value = '';
     document.getElementById('assign-account-name').value = '';
     document.getElementById('assign-account-number').value = '';
     document.getElementById('assign-account-type').value = '';
-    
-    // Load available accounts
-    try {
-        const { data: accounts, error } = await window.supabase
-            .from('bank_accounts')
-            .select('id, bank_name, account_name, account_number')
-            .order('is_active', { ascending: false })
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        if (!accounts || accounts.length === 0) {
-            select.innerHTML = '<option value="">No accounts configured. Please add one first.</option>';
-        } else {
-            select.innerHTML = '<option value="">— Select Account —</option>';
-            accounts.forEach(acc => {
-                const option = document.createElement('option');
-                option.value = acc.id;
-                option.textContent = `${acc.bank_name} - ${acc.account_name} (${acc.account_number})`;
-                select.appendChild(option);
-            });
-        }
-    } catch (err) {
-        select.innerHTML = `<option value="">Error loading accounts: ${err.message}</option>`;
-    }
-    
-    // Toggle between modes
-    document.querySelectorAll('input[name="assign-mode"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
-            if (e.target.value === 'existing') {
-                document.getElementById('assign-existing-form').classList.remove('d-none');
-                document.getElementById('assign-manual-form').classList.add('d-none');
-            } else {
-                document.getElementById('assign-existing-form').classList.add('d-none');
-                document.getElementById('assign-manual-form').classList.remove('d-none');
-            }
-        });
-    });
     
     new bootstrap.Modal(document.getElementById('assignAccountModal')).show();
 }
 
 async function confirmAssignAccount() {
     const requestId = document.getElementById('assign-request-id').value;
-    const mode = document.querySelector('input[name="assign-mode"]:checked').value;
+    const bankName = document.getElementById('assign-bank-name').value.trim();
+    const accountName = document.getElementById('assign-account-name').value.trim();
+    const accountNumber = document.getElementById('assign-account-number').value.trim();
+    const accountType = document.getElementById('assign-account-type').value;
     
     if (!requestId) {
         showToast('Request ID missing');
         return;
     }
     
-    let accountId = null;
+    if (!bankName || !accountName || !accountNumber || !accountType) {
+        showToast('Please fill all fields');
+        return;
+    }
     
     try {
-        // Handle both modes
-        if (mode === 'existing') {
-            // Mode 1: Select existing account
-            accountId = document.getElementById('assign-account-select').value;
-            if (!accountId) {
-                showToast('Please select an account');
-                return;
-            }
-        } else {
-            // Mode 2: Manual input - create account on the fly
-            const bankName = document.getElementById('assign-bank-name').value.trim();
-            const accountName = document.getElementById('assign-account-name').value.trim();
-            const accountNumber = document.getElementById('assign-account-number').value.trim();
-            const accountType = document.getElementById('assign-account-type').value;
-            
-            if (!bankName || !accountName || !accountNumber || !accountType) {
-                showToast('Please fill all fields');
-                return;
-            }
-            
-            // Create a temporary account for this assignment
-            const { data: newAccount, error: createError } = await window.supabase
-                .from('bank_accounts')
-                .insert([{
-                    bank_name: bankName,
-                    account_name: accountName,
-                    account_number: accountNumber,
-                    account_type: accountType,
-                    is_active: false,
-                    created_at: new Date().toISOString()
-                }])
-                .select()
-                .single();
-            
-            if (createError) throw createError;
-            accountId = newAccount.id;
-        }
+        // Create account with manual input details
+        const { data: newAccount, error: createError } = await window.supabase
+            .from('bank_accounts')
+            .insert([{
+                bank_name: bankName,
+                account_name: accountName,
+                account_number: accountNumber,
+                account_type: accountType,
+                is_active: false,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+        
+        if (createError) throw createError;
+        const accountId = newAccount.id;
         
         // Get payment details for notification
         const { data: paymentRequest } = await window.supabase
@@ -723,7 +676,7 @@ async function confirmAssignAccount() {
             .eq('id', requestId)
             .single();
         
-        // Assign the account (either selected or newly created)
+        // Assign the account to the request
         const { error: assignError } = await window.supabase
             .from('bank_account_requests')
             .update({
@@ -742,6 +695,21 @@ async function confirmAssignAccount() {
         if (shipmentId) {
             await window.supabase.from('notifications_log').insert([{
                 title: 'Bank Account Details Assigned',
+                body: `Your bank account details have been assigned for this payment. Amount: $${parseFloat(amount).toFixed(2)}.`,
+                event_type: 'bank_account_assigned',
+                related_id: shipmentId
+            }]);
+        }
+        
+        // Success toast WITH sound and vibration
+        showToast('✓ Bank account assigned! Receiver notified.', true);
+        bootstrap.Modal.getInstance(document.getElementById('assignAccountModal')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+        await loadPayments();
+    } catch (err) {
+        showToast('Error assigning account: ' + err.message);
+    }
+}
                 body: `Your bank account details have been assigned for this payment. Amount: $${parseFloat(amount).toFixed(2)}.`,
                 event_type: 'bank_account_assigned',
                 related_id: shipmentId
