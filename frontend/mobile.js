@@ -196,6 +196,11 @@ function switchTab(tabId) {
         showToast("Access Denied: Not authorized for payments.");
         tabId = 'dashboard'; // Fallback
     }
+    
+    if (tabId === 'accounts' && currentStaffRole !== 'Admin') {
+        showToast("Access Denied: Not authorized for accounts.");
+        tabId = 'dashboard'; // Fallback
+    }
 
     // Hide all views
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -212,7 +217,8 @@ function switchTab(tabId) {
         'payments': 'Payments',
         'support': 'Support',
         'search': 'Shipments',
-        'alerts': 'Notifications'
+        'alerts': 'Notifications',
+        'accounts': 'Payment Accounts'
     };
     document.getElementById('header-title').textContent = titles[tabId];
     
@@ -220,6 +226,7 @@ function switchTab(tabId) {
     if (tabId === 'payments') loadPayments();
     else if (tabId === 'support') loadTickets();
     else if (tabId === 'alerts') loadAlerts();
+    else if (tabId === 'accounts') loadMobileAccounts();
     else if (tabId === 'dashboard') loadDashboardStats();
 }
 
@@ -365,44 +372,84 @@ async function loadPayments() {
     list.innerHTML = '<div class="p-5 text-center text-muted"><div class="spinner-border text-ups-brown mb-2"></div><br>Loading payments...</div>';
     
     try {
-        const { data, error } = await window.supabase
+        // 1. Load regular payments (credit card, etc)
+        const { data: payments, error: payError } = await window.supabase
             .from('payments')
             .select('*, shipments(tracking_number)')
             .order('created_at', { ascending: false })
             .limit(50);
             
-        if (error) throw error;
+        if (payError) throw payError;
         
-        if (data.length === 0) {
-            list.innerHTML = '<div class="p-5 text-center text-muted"><span class="material-symbols-rounded fs-1 mb-2">check_circle</span><br>No payments found.</div>';
+        // 2. Load bank account requests
+        const { data: requests, error: reqError } = await window.supabase
+            .from('bank_account_requests')
+            .select('*, shipments(tracking_number, shipping_fee), receivers(full_name, email, phone)')
+            .order('created_at', { ascending: false })
+            .limit(50);
+            
+        if (reqError) throw reqError;
+        
+        // Combine and sort
+        const allItems = [];
+        
+        if (payments) {
+            payments.forEach(p => {
+                allItems.push({ ...p, type: 'payment' });
+            });
+        }
+        
+        if (requests) {
+            requests.forEach(r => {
+                allItems.push({ ...r, type: 'bank_request' });
+            });
+        }
+        
+        // Sort by created_at descending
+        allItems.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        if (allItems.length === 0) {
+            list.innerHTML = '<div class="p-5 text-center text-muted"><span class="material-symbols-rounded fs-1 mb-2">check_circle</span><br>No payment requests found.</div>';
             return;
         }
         
         list.innerHTML = '';
-        data.forEach(p => {
-            const tracking = p.shipments?.tracking_number || 'Unknown';
-            const date = new Date(p.created_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+        allItems.forEach(item => {
+            const tracking = item.shipments?.tracking_number || 'Unknown';
+            const date = new Date(item.created_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+            let statusBadge = '', statusColor = '';
+            let amount = item.type === 'bank_request' ? (item.shipments?.shipping_fee || 0) : (item.amount || 0);
             
-            let statusBadge = '';
-            let statusColor = '';
-            if (p.status === 'verified') { statusBadge = 'APPROVED'; statusColor = 'success'; }
-            else if (p.status === 'rejected') { statusBadge = 'REJECTED'; statusColor = 'danger'; }
-            else if (p.status === 'pending_verification') { statusBadge = 'ACTION REQUIRED'; statusColor = 'warning text-dark'; }
-            else { statusBadge = p.status; statusColor = 'secondary'; }
+            if (item.type === 'bank_request') {
+                if (item.status === 'pending') { statusBadge = 'ASSIGN ACCOUNT'; statusColor = 'warning text-dark'; }
+                else if (item.status === 'assigned') { statusBadge = 'ACCOUNT ASSIGNED'; statusColor = 'info'; }
+                else if (item.status === 'sent') { statusBadge = 'WAITING FOR TRANSFER'; statusColor = 'primary'; }
+            } else {
+                if (item.status === 'verified') { statusBadge = 'APPROVED'; statusColor = 'success'; }
+                else if (item.status === 'rejected') { statusBadge = 'REJECTED'; statusColor = 'danger'; }
+                else if (item.status === 'pending_verification') { statusBadge = 'ACTION REQUIRED'; statusColor = 'warning text-dark'; }
+                else { statusBadge = item.status; statusColor = 'secondary'; }
+            }
 
             const card = document.createElement('div');
             card.className = `mobile-card mb-3 mx-3`;
-            card.onclick = () => openPayment(p.id, p.amount, tracking, p.receipt_url, p.payment_method, p.status, date);
+            
+            if (item.type === 'bank_request') {
+                card.onclick = () => openBankRequest(item.id, tracking, amount, item.status, date, item.receivers);
+            } else {
+                card.onclick = () => openPayment(item.id, item.amount, tracking, item.receipt_url, item.payment_method, item.status, date);
+            }
             
             card.innerHTML = `
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <span class="badge bg-${statusColor} px-2 py-1">${statusBadge}</span>
                     <span class="small text-muted">${date}</span>
                 </div>
-                <h4 class="fw-bold mb-1">$${Number(p.amount).toFixed(2)}</h4>
-                <div class="text-muted small mb-2">${tracking} &bull; ${p.payment_method}</div>
+                <h4 class="fw-bold mb-1">$${Number(amount).toFixed(2)}</h4>
+                <div class="text-muted small mb-2">${tracking} &bull; ${item.type === 'bank_request' ? 'Bank Transfer' : item.payment_method}</div>
                 <div class="d-flex justify-content-end text-ups-brown fw-bold small align-items-center">
-                    Review <span class="material-symbols-rounded ms-1" style="font-size:1.2rem">chevron_right</span>
+                    ${item.type === 'bank_request' && item.status === 'pending' ? '<span class="material-symbols-rounded me-1" style="color: #dc3545;">warning</span>' : ''}
+                    ${item.type === 'bank_request' ? 'Details' : 'Review'} <span class="material-symbols-rounded ms-1" style="font-size:1.2rem">chevron_right</span>
                 </div>
             `;
             list.appendChild(card);
@@ -414,6 +461,138 @@ async function loadPayments() {
                 <strong>Error loading payments</strong><br>${err.message}
             </div>
         `;
+    }
+}
+
+function openBankRequest(id, tracking, amount, status, date, receiver) {
+    const body = document.getElementById('m-pay-dynamic-body');
+    
+    let statusBadge = '', statusColor = '';
+    if (status === 'pending') { statusBadge = 'ASSIGN ACCOUNT'; statusColor = 'warning text-dark'; }
+    else if (status === 'assigned') { statusBadge = 'ACCOUNT ASSIGNED'; statusColor = 'info'; }
+    else if (status === 'sent') { statusBadge = 'WAITING FOR TRANSFER'; statusColor = 'primary'; }
+    
+    let actionHtml = '';
+    if (status === 'pending') {
+        actionHtml = `
+            <div class="mt-auto bg-white p-4 border-top">
+                <h6 class="text-muted fw-bold small mb-3">REQUIRED ACTION</h6>
+                <button class="btn btn-ups w-100 py-3 fw-bold shadow-sm" style="border-radius:24px; font-size:1rem;" onclick="openAssignAccountModal('${id}')">
+                    <span class="material-symbols-rounded align-middle me-2">account_balance</span>Assign Bank Account
+                </button>
+            </div>
+        `;
+    } else {
+        actionHtml = `
+            <div class="mt-auto bg-white p-4 border-top text-center text-muted">
+                <span class="material-symbols-rounded fs-1 mb-2">check_circle</span><br>
+                <div class="fw-bold">Account Status</div>
+                <div class="small">The receiver has been notified of the bank details.</div>
+            </div>
+        `;
+    }
+    
+    let receiverInfo = receiver ? `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="text-muted small fw-bold">CUSTOMER</div>
+            <div class="fw-bold">${receiver.full_name}</div>
+        </div>
+    ` : '';
+    
+    body.innerHTML = `
+        <div class="p-4 bg-white border-bottom text-center">
+            <span class="badge bg-${statusColor} px-3 py-2 fs-6 rounded-pill mb-3">${statusBadge}</span>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Shipment</div>
+            <h4 class="fw-bold text-ups-brown mb-0" style="word-break: break-all;">${tracking}</h4>
+        </div>
+        
+        <div class="p-4 bg-white mb-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="text-muted small fw-bold">AMOUNT</div>
+                <div class="fs-2 fw-bold text-dark">$${Number(amount).toFixed(2)}</div>
+            </div>
+            ${receiverInfo}
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small fw-bold">REQUESTED</div>
+                <div class="fw-bold small">${date}</div>
+            </div>
+        </div>
+        
+        <div class="p-4 bg-white flex-grow-1">
+            <div class="p-4 text-center text-muted border bg-light rounded mb-3">
+                <span class="material-symbols-rounded fs-1 mb-2">info</span><br>
+                <div class="fw-bold">Bank Transfer Payment</div>
+                <div class="small">Receiver is waiting for your bank account details.</div>
+            </div>
+        </div>
+        
+        ${actionHtml}
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    modal.show();
+}
+
+async function openAssignAccountModal(requestId) {
+    const select = document.getElementById('assign-account-select');
+    document.getElementById('assign-request-id').value = requestId;
+    
+    // Load available accounts
+    try {
+        const { data: accounts, error } = await window.supabase
+            .from('bank_accounts')
+            .select('id, bank_name, account_name, account_number')
+            .order('is_active', { ascending: false })
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!accounts || accounts.length === 0) {
+            select.innerHTML = '<option value="">No accounts configured. Please add one first.</option>';
+            return;
+        }
+        
+        select.innerHTML = '<option value="">— Select Account —</option>';
+        accounts.forEach(acc => {
+            const option = document.createElement('option');
+            option.value = acc.id;
+            option.textContent = `${acc.bank_name} - ${acc.account_name} (${acc.account_number})`;
+            select.appendChild(option);
+        });
+    } catch (err) {
+        select.innerHTML = `<option value="">Error loading accounts: ${err.message}</option>`;
+    }
+    
+    new bootstrap.Modal(document.getElementById('assignAccountModal')).show();
+}
+
+async function confirmAssignAccount() {
+    const requestId = document.getElementById('assign-request-id').value;
+    const accountId = document.getElementById('assign-account-select').value;
+    
+    if (!requestId || !accountId) {
+        showToast('Please select an account');
+        return;
+    }
+    
+    try {
+        const { error } = await window.supabase
+            .from('bank_account_requests')
+            .update({
+                assigned_bank_account_id: accountId,
+                status: 'assigned',
+                assigned_at: new Date().toISOString()
+            })
+            .eq('id', requestId);
+        
+        if (error) throw error;
+        
+        showToast('Bank account assigned! Receiver has been notified.');
+        bootstrap.Modal.getInstance(document.getElementById('assignAccountModal')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+        await loadPayments();
+    } catch (err) {
+        showToast('Error assigning account: ' + err.message);
     }
 }
 
@@ -1277,5 +1456,161 @@ async function requestPushManually() {
     if (Notification.permission !== 'default') {
         const banner = document.getElementById('push-permission-banner');
         if(banner) banner.classList.add('d-none');
+    }
+}
+
+// ==========================================
+// PAYMENT ACCOUNTS MANAGEMENT (MOBILE)
+// ==========================================
+let mobileGlobalAccounts = [];
+
+async function loadMobileAccounts() {
+    const container = document.getElementById('accounts-list');
+    container.innerHTML = '<div class="p-4 text-center text-muted"><div class="spinner-border spinner-border-sm text-ups-brown mb-2"></div><br>Loading accounts...</div>';
+
+    try {
+        const { data, error } = await window.supabase
+            .from('bank_accounts')
+            .select('id, bank_name, account_name, account_number, account_type, is_active, created_at')
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        mobileGlobalAccounts = data || [];
+
+        container.innerHTML = '';
+
+        if (mobileGlobalAccounts.length === 0) {
+            container.innerHTML = '<div class="p-4 text-center text-muted">No payment accounts configured yet.<br><br><button class="btn btn-ups btn-sm" onclick="openAddAccountModal()">Add First Account</button></div>';
+            return;
+        }
+
+        mobileGlobalAccounts.forEach(acc => {
+            const date = new Date(acc.created_at).toLocaleDateString();
+            const badge = acc.is_active ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>';
+            const toggleLabel = acc.is_active ? 'Deactivate' : 'Activate';
+            const toggleClass = acc.is_active ? 'btn-outline-danger' : 'btn-outline-success';
+
+            const card = document.createElement('div');
+            card.className = 'shipment-card mx-3 mb-3';
+            card.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="fw-bold">${acc.bank_name}</div>
+                    ${badge}
+                </div>
+                <div class="small text-muted mb-1">${acc.account_name}</div>
+                <div class="small fw-bold text-dark mb-2" style="letter-spacing: 1px;">${acc.account_number}${acc.account_type ? ' · ' + acc.account_type : ''}</div>
+                <div class="small text-muted mb-3">Added ${date}</div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary rounded flex-grow-1" onclick="openEditAccountModal('${acc.id}')">Edit</button>
+                    <button class="btn btn-sm ${toggleClass} rounded flex-grow-1" onclick="toggleMobileAccountStatus('${acc.id}', ${acc.is_active})">${toggleLabel}</button>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (err) {
+        showToast('Error loading accounts: ' + err.message);
+        container.innerHTML = '<div class="p-4 text-center text-danger">Error loading accounts</div>';
+    }
+}
+
+function openAddAccountModal() {
+    document.getElementById('account-modal-title').textContent = 'Add Payment Account';
+    document.getElementById('account-form').reset();
+    document.getElementById('account-edit-id').value = '';
+    document.getElementById('account-modal-error').classList.add('d-none');
+    document.getElementById('account-save-btn').textContent = 'Add Account';
+    new bootstrap.Modal(document.getElementById('accountModal')).show();
+}
+
+function openEditAccountModal(id) {
+    const acc = mobileGlobalAccounts.find(a => a.id === id);
+    if (!acc) return;
+
+    document.getElementById('account-modal-title').textContent = 'Edit Payment Account';
+    document.getElementById('account-edit-id').value = acc.id;
+    document.getElementById('m-acc-bank-name').value = acc.bank_name;
+    document.getElementById('m-acc-account-name').value = acc.account_name;
+    document.getElementById('m-acc-account-number').value = acc.account_number;
+    document.getElementById('m-acc-account-type').value = acc.account_type || '';
+    document.getElementById('m-acc-is-active').checked = acc.is_active;
+    document.getElementById('account-modal-error').classList.add('d-none');
+    document.getElementById('account-save-btn').textContent = 'Save Changes';
+    new bootstrap.Modal(document.getElementById('accountModal')).show();
+}
+
+async function saveMobileAccount(e) {
+    e.preventDefault();
+    const btn = document.getElementById('account-save-btn');
+    const errBox = document.getElementById('account-modal-error');
+    errBox.classList.add('d-none');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    const editId = document.getElementById('account-edit-id').value;
+    const isActive = document.getElementById('m-acc-is-active').checked;
+    const payload = {
+        bank_name: document.getElementById('m-acc-bank-name').value.trim(),
+        account_name: document.getElementById('m-acc-account-name').value.trim(),
+        account_number: document.getElementById('m-acc-account-number').value.trim(),
+        account_type: document.getElementById('m-acc-account-type').value || null,
+        is_active: isActive,
+        updated_at: new Date().toISOString()
+    };
+
+    try {
+        // If activating, deactivate all others
+        if (isActive) {
+            const { error: deactivateError } = await window.supabase
+                .from('bank_accounts')
+                .update({ is_active: false, updated_at: new Date().toISOString() })
+                .neq('id', editId || '00000000-0000-0000-0000-000000000000');
+            if (deactivateError) throw deactivateError;
+        }
+
+        if (editId) {
+            const { error } = await window.supabase
+                .from('bank_accounts')
+                .update(payload)
+                .eq('id', editId);
+            if (error) throw error;
+        } else {
+            const { error } = await window.supabase
+                .from('bank_accounts')
+                .insert([payload]);
+            if (error) throw error;
+        }
+
+        showToast(editId ? 'Account updated!' : 'Account added!');
+        bootstrap.Modal.getInstance(document.getElementById('accountModal')).hide();
+        await loadMobileAccounts();
+    } catch (err) {
+        errBox.textContent = 'Error: ' + (err.message || 'Unknown error');
+        errBox.classList.remove('d-none');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = editId ? 'Save Changes' : 'Add Account';
+    }
+}
+
+async function toggleMobileAccountStatus(id, wasActive) {
+    try {
+        const { error } = await window.supabase
+            .from('bank_accounts')
+            .update({ is_active: !wasActive, updated_at: new Date().toISOString() })
+            .eq('id', id);
+        if (error) throw error;
+
+        // If was activating, deactivate others
+        if (!wasActive) {
+            await window.supabase
+                .from('bank_accounts')
+                .update({ is_active: false, updated_at: new Date().toISOString() })
+                .neq('id', id);
+        }
+
+        showToast(wasActive ? 'Account deactivated' : 'Account activated');
+        await loadMobileAccounts();
+    } catch (err) {
+        showToast('Error: ' + err.message);
     }
 }

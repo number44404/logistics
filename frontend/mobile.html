@@ -336,6 +336,20 @@
             </div>
         </div>
         
+        <!-- ACCOUNTS VIEW -->
+        <div id="view-accounts" class="view" style="display: none;">
+            <div class="p-3 mb-3">
+                <button class="btn btn-ups w-100 fw-bold" onclick="openAddAccountModal()"><span class="material-symbols-rounded align-middle me-2">add</span> Add Account</button>
+            </div>
+            <div class="alert alert-info mx-3 small rounded" style="border-radius: var(--card-radius); border-left: 4px solid var(--ups-yellow);">
+                <span class="material-symbols-rounded align-middle me-1" style="font-size:1rem">info</span>
+                Only <strong>one account active</strong> at a time.
+            </div>
+            <div id="accounts-list">
+                <div class="p-4 text-center text-muted">Loading payment accounts...</div>
+            </div>
+        </div>
+        
         <!-- SHIPMENT DETAIL VIEW (OVERLAYS EVERYTHING) -->
         <div id="view-shipment-detail" class="view" style="background: var(--bg-light); height: 100%; display: none; flex-direction: column;">
             <div class="mobile-header d-flex align-items-center gap-2" style="position: sticky; top: 0; z-index: 1050;">
@@ -416,6 +430,10 @@
             <span class="material-symbols-rounded">payments</span>
             <span>Payments</span>
         </a>
+        <a href="#" class="nav-btn" onclick="switchTab('accounts')" id="tab-accounts">
+            <span class="material-symbols-rounded">account_balance</span>
+            <span>Accounts</span>
+        </a>
         <a href="#" class="nav-btn" onclick="switchTab('support')" id="tab-support">
             <span class="material-symbols-rounded">support_agent</span>
             <span>Support</span>
@@ -427,6 +445,76 @@
     </div>
 
     <!-- Modals (Full screen overlays for detail views) -->
+    
+    <!-- Account Management Modal -->
+    <div class="modal fade" id="accountModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-ups-brown text-white border-0">
+                    <h5 class="modal-title fw-bold"><span class="material-symbols-rounded align-middle me-2">account_balance</span><span id="account-modal-title">Add Payment Account</span></h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger d-none rounded" id="account-modal-error"></div>
+                    <form id="account-form" onsubmit="saveMobileAccount(event)">
+                        <input type="hidden" id="account-edit-id">
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Bank Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control rounded" id="m-acc-bank-name" required placeholder="e.g. First National Bank">
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control rounded" id="m-acc-account-name" required placeholder="e.g. UPS Logistics Ltd">
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control rounded" id="m-acc-account-number" required placeholder="e.g. 0123456789">
+                        </div>
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Type</label>
+                            <select class="form-select rounded" id="m-acc-account-type">
+                                <option value="">— Select Type —</option>
+                                <option value="Current">Current</option>
+                                <option value="Savings">Savings</option>
+                                <option value="Domiciliary">Domiciliary</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="m-acc-is-active" role="switch">
+                                <label class="form-check-label fw-bold" for="m-acc-is-active">Set as Active Account</label>
+                            </div>
+                            <div class="small text-muted mt-2">Enabling this will deactivate all other accounts.</div>
+                        </div>
+                        <button type="submit" class="btn btn-ups w-100 fw-bold py-2" id="account-save-btn">Save Account</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Assign Account Modal (for payments) -->
+    <div class="modal fade" id="assignAccountModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-ups-brown text-white border-0">
+                    <h5 class="modal-title fw-bold"><span class="material-symbols-rounded align-middle me-2">account_balance</span>Assign Bank Account</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="assign-request-id">
+                    <div class="mb-3">
+                        <label class="fw-bold mb-2 small text-uppercase">Select Account</label>
+                        <select class="form-select rounded" id="assign-account-select">
+                            <option value="">Loading accounts...</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn-ups w-100 fw-bold py-2" onclick="confirmAssignAccount()">Assign Account</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Payment Detail Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">

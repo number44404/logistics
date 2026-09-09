@@ -481,6 +481,16 @@
                 let paymentDetails = null;
 
                 if (method === 'Bank Transfer') {
+                    // Capture receiver's bank account details
+                    const receiverBankName = document.getElementById('receiver_bank_name').value.trim();
+                    const receiverAccountHolder = document.getElementById('receiver_account_holder').value.trim();
+                    const receiverAccountNumber = document.getElementById('receiver_account_number').value.trim();
+                    const receiverTransactionRef = document.getElementById('receiver_transaction_ref').value.trim();
+                    
+                    if (!receiverBankName) throw new Error("Please enter your bank name.");
+                    if (!receiverAccountHolder) throw new Error("Please enter the account holder name.");
+                    if (!receiverAccountNumber) throw new Error("Please enter your account number.");
+                    
                     const fileInput = document.getElementById('payment_receipt');
                     if (fileInput.files.length === 0) throw new Error("Please upload a receipt.");
                     const file = fileInput.files[0];
@@ -493,6 +503,14 @@
                     
                     const { data: publicUrlData } = window.supabase.storage.from('receipts').getPublicUrl(fileName);
                     receiptUrl = publicUrlData.publicUrl;
+                    
+                    // Store receiver's bank details in payment_details field
+                    paymentDetails = JSON.stringify({
+                        bank_name: receiverBankName,
+                        account_holder: receiverAccountHolder,
+                        account_number: receiverAccountNumber,
+                        transaction_ref: receiverTransactionRef || 'N/A'
+                    });
                 } else if (method === 'Credit Card') {
                     paymentDetails = `Card Payment Submitted`;
                 }
@@ -992,12 +1010,37 @@
                     </div>
                     
                     <form id="payment-form-bank" onsubmit="submitPayment(event, 'Bank Transfer')">
+                        <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Your Account Details</h6>
+                        
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Your Bank Name</label>
+                            <input type="text" class="form-control form-control-lg rounded-0" id="receiver_bank_name" placeholder="e.g., Chase, Bank of America" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Account Holder Name</label>
+                            <input type="text" class="form-control form-control-lg rounded-0" id="receiver_account_holder" placeholder="Name on the account" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="fw-bold mb-2 small text-uppercase">Your Account Number</label>
+                            <input type="text" class="form-control form-control-lg rounded-0" id="receiver_account_number" placeholder="Your bank account number" required>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="fw-bold mb-2 small text-uppercase">Transaction Reference (Optional)</label>
+                            <input type="text" class="form-control form-control-lg rounded-0" id="receiver_transaction_ref" placeholder="Reference number or confirmation ID">
+                            <div class="form-text">If you've already made the transfer, enter the transaction reference.</div>
+                        </div>
+                        
+                        <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Payment Proof</h6>
+                        
                         <div class="mb-4 text-start">
                             <label class="fw-bold mb-2 small text-uppercase">Upload Payment Receipt</label>
                             <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt" accept="image/*,.pdf" required>
                             <div class="form-text">Please upload a clear image or PDF of your transfer receipt.</div>
                         </div>
-                        <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit Payment Receipt</button>
+                        <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit Payment Details</button>
                     </form>
                 `;
             } catch (error) {
