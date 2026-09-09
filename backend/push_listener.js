@@ -73,8 +73,8 @@ async function dispatchPushForLog(log) {
     } else if (log.event_type === 'payment_submitted') {
         targetRoles = ['Admin'];
         pushPayload = {
-            title: 'Payment Requires Review',
-            body: 'A shipment payment requires staff verification.',
+            title: log.title || 'Payment Requires Review',
+            body: log.body || 'A shipment payment requires staff verification.',
             event_type: log.event_type,
             related_id: log.related_id,
             notification_id: log.id,

@@ -710,7 +710,21 @@ async function confirmAssignAccount() {
         showToast('Error assigning account: ' + err.message);
     }
 }
-
+                body: `Your bank account details have been assigned for this payment. Amount: $${parseFloat(amount).toFixed(2)}.`,
+                event_type: 'bank_account_assigned',
+                related_id: shipmentId
+            }]);
+        }
+        
+        // Success toast WITH sound and vibration
+        showToast('✓ Bank account assigned! Receiver notified.', true);
+        bootstrap.Modal.getInstance(document.getElementById('assignAccountModal')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+        await loadPayments();
+    } catch (err) {
+        showToast('Error assigning account: ' + err.message);
+    }
+}
 
 function openPayment(id, amount, tracking, receiptUrl, method, status, date) {
     activePaymentId = id;

@@ -622,6 +622,54 @@
                         account_number: receiverAccountNumber,
                         transaction_ref: receiverTransactionRef || 'N/A'
                     });
+                } else if (method === 'PayPal') {
+                    const paypalIdentifier = document.getElementById('paypal_email').value.trim();
+                    const paypalTransactionRef = document.getElementById('paypal_transaction_ref').value.trim();
+
+                    if (!paypalIdentifier) throw new Error("Please enter your PayPal email or username.");
+
+                    const fileInput = document.getElementById('payment_receipt_paypal');
+                    if (!fileInput || fileInput.files.length === 0) throw new Error("Please upload a PayPal payment proof.");
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${shipmentId}_${Date.now()}_paypal.${fileExt}`;
+
+                    const { error: uploadError } = await window.supabase
+                        .storage.from('receipts').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = window.supabase.storage.from('receipts').getPublicUrl(fileName);
+                    receiptUrl = publicUrlData.publicUrl;
+
+                    paymentDetails = JSON.stringify({
+                        payment_type: 'PayPal',
+                        pay_pal_email: paypalIdentifier,
+                        transaction_ref: paypalTransactionRef || 'N/A'
+                    });
+                } else if (method === 'Cash App') {
+                    const cashAppIdentifier = document.getElementById('cashapp_handle').value.trim();
+                    const cashAppTransactionRef = document.getElementById('cashapp_transaction_ref').value.trim();
+
+                    if (!cashAppIdentifier) throw new Error("Please enter your Cash App cashtag or username.");
+
+                    const fileInput = document.getElementById('payment_receipt_cashapp');
+                    if (!fileInput || fileInput.files.length === 0) throw new Error("Please upload a Cash App payment proof.");
+                    const file = fileInput.files[0];
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${shipmentId}_${Date.now()}_cashapp.${fileExt}`;
+
+                    const { error: uploadError } = await window.supabase
+                        .storage.from('receipts').upload(fileName, file, { cacheControl: '3600', upsert: false });
+                    if (uploadError) throw uploadError;
+
+                    const { data: publicUrlData } = window.supabase.storage.from('receipts').getPublicUrl(fileName);
+                    receiptUrl = publicUrlData.publicUrl;
+
+                    paymentDetails = JSON.stringify({
+                        payment_type: 'Cash App',
+                        cash_app_handle: cashAppIdentifier,
+                        transaction_ref: cashAppTransactionRef || 'N/A'
+                    });
                 } else if (method === 'Credit Card') {
                     paymentDetails = `Card Payment Submitted`;
                 }
@@ -656,7 +704,7 @@
 
                 // Log notification
                 await window.supabase.from('notifications_log').insert([{
-                    title: "New Payment Request",
+                    title: `New ${method} Payment Request`,
                     body: `A new ${method} payment of $${shippingFee.toFixed(2)} is pending verification for shipment ${generatedTrackingNumber}.`,
                     event_type: "payment_submitted",
                     related_id: shipmentId
@@ -956,7 +1004,8 @@
                         icon = 'account_balance';
                         bankTabId = tabId;
                     }
-                    if (method.type === 'card') icon = 'credit_card';
+                    if (method.type === 'paypal') icon = 'paypal';
+                    if (method.type === 'cashapp') icon = 'payments';
                     if (method.type === 'gift_card') icon = 'card_giftcard';
 
                     const isFirst = tabsContainer.children.length === 0;
@@ -984,6 +1033,44 @@
                                 <p class="small text-muted d-none" id="bank-spinner-msg">We're retrieving the payment account for this transaction. Please wait...</p>
                                 <h4 class="fw-bold d-none" id="bank-spinner-title">Getting payment account...</h4>
                             </div>
+                        `;
+                    } else if (method.type === 'paypal') {
+                        paneHTML += `
+                            <form id="payment-form-paypal" onsubmit="submitPayment(event, 'PayPal')">
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2 small text-uppercase">PayPal Email or Username</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="paypal_email" placeholder="you@example.com or PayPal username" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="fw-bold mb-2 small text-uppercase">Transaction Reference (Optional)</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="paypal_transaction_ref" placeholder="Reference ID from your PayPal receipt">
+                                </div>
+                                <div class="mb-4 text-start">
+                                    <label class="fw-bold mb-2 small text-uppercase">Upload Payment Proof</label>
+                                    <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt_paypal" accept="image/*,.pdf" required>
+                                    <div class="form-text">Please upload a screenshot or PDF of the payment confirmation.</div>
+                                </div>
+                                <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit PayPal Payment</button>
+                            </form>
+                        `;
+                    } else if (method.type === 'cashapp') {
+                        paneHTML += `
+                            <form id="payment-form-cashapp" onsubmit="submitPayment(event, 'Cash App')">
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2 small text-uppercase">Cash App Cashtag / Username</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="cashapp_handle" placeholder="e.g. $yourhandle or @username" required>
+                                </div>
+                                <div class="mb-4">
+                                    <label class="fw-bold mb-2 small text-uppercase">Transaction Reference (Optional)</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="cashapp_transaction_ref" placeholder="Reference ID from your Cash App payment">
+                                </div>
+                                <div class="mb-4 text-start">
+                                    <label class="fw-bold mb-2 small text-uppercase">Upload Payment Proof</label>
+                                    <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt_cashapp" accept="image/*,.pdf" required>
+                                    <div class="form-text">Please upload a screenshot or PDF showing the payment.</div>
+                                </div>
+                                <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit Cash App Payment</button>
+                            </form>
                         `;
                     } else if (method.type === 'gift_card') {
                         paneHTML += `

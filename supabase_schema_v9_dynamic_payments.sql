@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS payment_methods (
 -- Insert default methods
 INSERT INTO payment_methods (name, type, instructions) VALUES
 ('Bank Transfer', 'bank', 'Transfer funds directly to our bank account.'),
+('PayPal', 'paypal', 'Send your payment using PayPal to our business account.'),
+('Cash App', 'cashapp', 'Send your payment through Cash App using your cashtag or username.'),
 ('Credit Card', 'card', 'Pay securely with your credit or debit card.'),
 ('Gift Card', 'gift_card', 'Redeem a valid logistics gift card.')
 ON CONFLICT (type) DO NOTHING;
@@ -36,6 +38,9 @@ ON CONFLICT DO NOTHING;
 -- Enable RLS and allow public read access
 ALTER TABLE payment_methods ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bank_accounts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read payment_methods" ON payment_methods;
+DROP POLICY IF EXISTS "Public read bank_accounts" ON bank_accounts;
 
 CREATE POLICY "Public read payment_methods" ON payment_methods FOR SELECT TO anon USING (is_active = true);
 CREATE POLICY "Public read bank_accounts" ON bank_accounts FOR SELECT TO anon USING (is_active = true);
