@@ -476,8 +476,16 @@ async function loadPayments() {
             .select('*, shipments(tracking_number, shipping_fee), receivers(full_name, email, phone)')
             .order('created_at', { ascending: false })
             .limit(50);
+
+        // 3. Load PayPal / Cash App assignment requests
+        const { data: methodRequests, error: methodReqError } = await window.supabase
+            .from('payment_method_requests')
+            .select('*, shipments(tracking_number, shipping_fee), receivers(full_name, email, phone)')
+            .order('created_at', { ascending: false })
+            .limit(50);
             
         if (reqError) throw reqError;
+        if (methodReqError) throw methodReqError;
         
         // Combine and sort
         const allItems = [];
@@ -491,6 +499,12 @@ async function loadPayments() {
         if (requests) {
             requests.forEach(r => {
                 allItems.push({ ...r, type: 'bank_request' });
+            });
+        }
+
+        if (methodRequests) {
+            methodRequests.forEach(r => {
+                allItems.push({ ...r, type: 'method_request' });
             });
         }
         
@@ -507,12 +521,22 @@ async function loadPayments() {
             const tracking = item.shipments?.tracking_number || 'Unknown';
             const date = new Date(item.created_at).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
             let statusBadge = '', statusColor = '';
-            let amount = item.type === 'bank_request' ? (item.shipments?.shipping_fee || 0) : (item.amount || 0);
+            let amount = item.type === 'bank_request' || item.type === 'method_request'
+                ? (item.shipments?.shipping_fee || 0)
+                : (item.amount || 0);
+            const methodLabel = item.type === 'method_request'
+                ? (item.method_type === 'paypal' ? 'PayPal' : 'Cash App')
+                : (item.type === 'bank_request' ? 'Bank Transfer' : (item.payment_method || 'N/A'));
             
             if (item.type === 'bank_request') {
                 if (item.status === 'pending') { statusBadge = 'ASSIGN ACCOUNT'; statusColor = 'warning text-dark'; }
                 else if (item.status === 'assigned') { statusBadge = 'ACCOUNT ASSIGNED'; statusColor = 'info'; }
                 else if (item.status === 'sent') { statusBadge = 'WAITING FOR TRANSFER'; statusColor = 'primary'; }
+            } else if (item.type === 'method_request') {
+                if (item.status === 'pending') { statusBadge = 'ASSIGN DETAILS'; statusColor = 'warning text-dark'; }
+                else if (item.status === 'assigned') { statusBadge = 'DETAILS ASSIGNED'; statusColor = 'info'; }
+                else if (item.status === 'sent') { statusBadge = 'WAITING FOR PAYMENT'; statusColor = 'primary'; }
+                else { statusBadge = item.status; statusColor = 'secondary'; }
             } else {
                 if (item.status === 'verified') { statusBadge = 'APPROVED'; statusColor = 'success'; }
                 else if (item.status === 'rejected') { statusBadge = 'REJECTED'; statusColor = 'danger'; }
@@ -525,6 +549,8 @@ async function loadPayments() {
             
             if (item.type === 'bank_request') {
                 card.onclick = () => openBankRequest(item.id, tracking, amount, item.status, date, item.receivers);
+            } else if (item.type === 'method_request') {
+                card.onclick = () => openMethodRequest(item.id, tracking, amount, item.status, date, item.receivers, item.method_type, item.assigned_value);
             } else {
                 card.onclick = () => openPayment(item.id, item.amount, tracking, item.receipt_url, item.payment_method, item.status, date);
             }
@@ -535,10 +561,10 @@ async function loadPayments() {
                     <span class="small text-muted">${date}</span>
                 </div>
                 <h4 class="fw-bold mb-1">$${Number(amount).toFixed(2)}</h4>
-                <div class="text-muted small mb-2">${tracking} &bull; ${item.type === 'bank_request' ? 'Bank Transfer' : item.payment_method}</div>
+                <div class="text-muted small mb-2">${tracking} &bull; ${methodLabel}</div>
                 <div class="d-flex justify-content-end text-ups-brown fw-bold small align-items-center">
-                    ${item.type === 'bank_request' && item.status === 'pending' ? '<span class="material-symbols-rounded me-1" style="color: #dc3545;">warning</span>' : ''}
-                    ${item.type === 'bank_request' ? 'Details' : 'Review'} <span class="material-symbols-rounded ms-1" style="font-size:1.2rem">chevron_right</span>
+                    ${(item.type === 'bank_request' || item.type === 'method_request') && item.status === 'pending' ? '<span class="material-symbols-rounded me-1" style="color: #dc3545;">warning</span>' : ''}
+                    ${(item.type === 'bank_request' || item.type === 'method_request') ? 'Details' : 'Review'} <span class="material-symbols-rounded ms-1" style="font-size:1.2rem">chevron_right</span>
                 </div>
             `;
             list.appendChild(card);
@@ -551,6 +577,70 @@ async function loadPayments() {
             </div>
         `;
     }
+}
+
+function openMethodRequest(id, tracking, amount, status, date, receiver, methodType, assignedValue) {
+    const body = document.getElementById('m-pay-dynamic-body');
+    const methodLabel = methodType === 'paypal' ? 'PayPal' : 'Cash App';
+    
+    let statusBadge = '', statusColor = '';
+    if (status === 'pending') { statusBadge = 'ASSIGN DETAILS'; statusColor = 'warning text-dark'; }
+    else if (status === 'assigned') { statusBadge = 'DETAILS ASSIGNED'; statusColor = 'info'; }
+    else if (status === 'sent') { statusBadge = 'WAITING FOR PAYMENT'; statusColor = 'primary'; }
+    else { statusBadge = status || 'Unknown'; statusColor = 'secondary'; }
+
+    let receiverInfo = receiver ? `
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="text-muted small fw-bold">CUSTOMER</div>
+            <div class="fw-bold">${receiver.full_name}</div>
+        </div>
+    ` : '';
+
+    let assignedHtml = assignedValue
+        ? `
+            <div class="p-3 border rounded mb-3 bg-light">
+                <div class="small text-muted fw-bold text-uppercase mb-2">Assigned ${methodLabel} Details</div>
+                <div class="fw-bold text-break">${assignedValue}</div>
+            </div>
+        `
+        : `
+            <div class="p-4 text-center text-muted border bg-light rounded mb-3">
+                <span class="material-symbols-rounded fs-1 mb-2">pending</span><br>
+                <div class="fw-bold">${methodLabel} Details Pending</div>
+                <div class="small">Waiting for admin assignment.</div>
+            </div>
+        `;
+    
+    body.innerHTML = `
+        <div class="p-4 bg-white border-bottom text-center">
+            <span class="badge bg-${statusColor} px-3 py-2 fs-6 rounded-pill mb-3">${statusBadge}</span>
+            <div class="text-muted small fw-bold text-uppercase mb-1">Shipment</div>
+            <h4 class="fw-bold text-ups-brown mb-0" style="word-break: break-all;">${tracking}</h4>
+        </div>
+        
+        <div class="p-4 bg-white mb-2 border-bottom">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="text-muted small fw-bold">AMOUNT</div>
+                <div class="fs-2 fw-bold text-dark">$${Number(amount).toFixed(2)}</div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="text-muted small fw-bold">METHOD</div>
+                <div class="fw-bold">${methodLabel}</div>
+            </div>
+            ${receiverInfo}
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small fw-bold">REQUESTED</div>
+                <div class="fw-bold small">${date}</div>
+            </div>
+        </div>
+        
+        <div class="p-4 bg-white flex-grow-1">
+            ${assignedHtml}
+        </div>
+    `;
+    
+    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    modal.show();
 }
 
 function openBankRequest(id, tracking, amount, status, date, receiver) {
@@ -695,21 +785,6 @@ async function confirmAssignAccount() {
         if (shipmentId) {
             await window.supabase.from('notifications_log').insert([{
                 title: 'Bank Account Details Assigned',
-                body: `Your bank account details have been assigned for this payment. Amount: $${parseFloat(amount).toFixed(2)}.`,
-                event_type: 'bank_account_assigned',
-                related_id: shipmentId
-            }]);
-        }
-        
-        // Success toast WITH sound and vibration
-        showToast('✓ Bank account assigned! Receiver notified.', true);
-        bootstrap.Modal.getInstance(document.getElementById('assignAccountModal')).hide();
-        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
-        await loadPayments();
-    } catch (err) {
-        showToast('Error assigning account: ' + err.message);
-    }
-}
                 body: `Your bank account details have been assigned for this payment. Amount: $${parseFloat(amount).toFixed(2)}.`,
                 event_type: 'bank_account_assigned',
                 related_id: shipmentId
