@@ -1040,7 +1040,7 @@
                                     <div class="spinner-border spinner-border-sm text-warning" role="status" aria-label="Loading assigned PayPal details"></div>
                                     <div class="fw-bold mb-0">Assigned PayPal Account</div>
                                 </div>
-                                <div id="paypal-target-text">Waiting for admin assignment...</div>
+                                <div id="paypal-target-text">Retrieving payment details for this transaction...</div>
                             </div>
                             <form id="payment-form-paypal" onsubmit="submitPayment(event, 'PayPal')">
                                 <input type="hidden" id="paypal_target" value="">
@@ -1067,7 +1067,7 @@
                                     <div class="spinner-border spinner-border-sm text-warning" role="status" aria-label="Loading assigned Cash App details"></div>
                                     <div class="fw-bold mb-0">Assigned Cash App Handle</div>
                                 </div>
-                                <div id="cashapp-target-text">Waiting for admin assignment...</div>
+                                <div id="cashapp-target-text">Retrieving payment details for this transaction...</div>
                             </div>
                             <form id="payment-form-cashapp" onsubmit="submitPayment(event, 'Cash App')">
                                 <input type="hidden" id="cashapp_target" value="">
@@ -1130,7 +1130,7 @@
             const targetInput = document.getElementById(targetInputId);
             if (!container || !targetText || !targetInput) return;
 
-            targetText.textContent = 'Waiting for admin assignment...';
+            targetText.textContent = 'Retrieving payment details for this transaction...';
             targetInput.value = '';
 
             try {
@@ -1191,7 +1191,7 @@
                         .subscribe();
                 }
             } catch (error) {
-                targetText.textContent = 'Waiting for admin assignment...';
+                targetText.textContent = 'Retrieving payment details for this transaction...';
                 console.error(error);
             }
         }
@@ -1202,7 +1202,7 @@
                 if (!res.ok) {
                     const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
                     const targetText = document.getElementById(targetTextId);
-                    if (targetText) targetText.textContent = 'Waiting for admin assignment...';
+                    if (targetText) targetText.textContent = 'Retrieving payment details for this transaction...';
                     return;
                 }
                 const data = await res.json();
@@ -1218,7 +1218,7 @@
                 if (!targetInput || !targetText || !container) return;
 
                 if (!data.assigned_value) {
-                    targetText.textContent = 'Waiting for admin assignment...';
+                    targetText.textContent = 'Retrieving payment details for this transaction...';
                     return;
                 }
 
