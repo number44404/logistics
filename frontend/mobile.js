@@ -610,6 +610,26 @@ function openMethodRequest(id, tracking, amount, status, date, receiver, methodT
                 <div class="small">Waiting for admin assignment.</div>
             </div>
         `;
+
+    let actionHtml = '';
+    if (status === 'pending') {
+        actionHtml = `
+            <div class="mt-auto bg-white p-4 border-top">
+                <h6 class="text-muted fw-bold small mb-3">REQUIRED ACTION</h6>
+                <button class="btn btn-ups w-100 py-3 fw-bold shadow-sm" style="border-radius:24px; font-size:1rem;" onclick="openAssignPaymentMethodModal('${id}', '${methodType}')">
+                    <span class="material-symbols-rounded align-middle me-2">payments</span>Assign ${methodLabel} Details
+                </button>
+            </div>
+        `;
+    } else {
+        actionHtml = `
+            <div class="mt-auto bg-white p-4 border-top text-center text-muted">
+                <span class="material-symbols-rounded fs-1 mb-2">check_circle</span><br>
+                <div class="fw-bold">Assignment Status</div>
+                <div class="small">The receiver has been notified of the ${methodLabel} details.</div>
+            </div>
+        `;
+    }
     
     body.innerHTML = `
         <div class="p-4 bg-white border-bottom text-center">
@@ -637,6 +657,8 @@ function openMethodRequest(id, tracking, amount, status, date, receiver, methodT
         <div class="p-4 bg-white flex-grow-1">
             ${assignedHtml}
         </div>
+
+        ${actionHtml}
     `;
     
     const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
@@ -724,6 +746,24 @@ async function openAssignAccountModal(requestId) {
     new bootstrap.Modal(document.getElementById('assignAccountModal')).show();
 }
 
+async function openAssignPaymentMethodModal(requestId, methodType) {
+    document.getElementById('assign-payment-method-request-id').value = requestId;
+    document.getElementById('assign-payment-method-type').value = methodType;
+    document.getElementById('assign-payment-method-value').value = '';
+
+    const label = document.getElementById('assign-payment-method-label');
+    const input = document.getElementById('assign-payment-method-value');
+    if (methodType === 'paypal') {
+        label.textContent = 'PayPal Email / Username';
+        input.placeholder = 'e.g. paypal.me/username or username@example.com';
+    } else {
+        label.textContent = 'Cash App Cashtag / Username';
+        input.placeholder = 'e.g. $cashappname or @username';
+    }
+
+    new bootstrap.Modal(document.getElementById('assignPaymentMethodModal')).show();
+}
+
 async function confirmAssignAccount() {
     const requestId = document.getElementById('assign-request-id').value;
     const bankName = document.getElementById('assign-bank-name').value.trim();
@@ -798,6 +838,50 @@ async function confirmAssignAccount() {
         await loadPayments();
     } catch (err) {
         showToast('Error assigning account: ' + err.message);
+    }
+}
+
+async function confirmAssignPaymentMethod() {
+    const requestId = document.getElementById('assign-payment-method-request-id').value;
+    const methodType = document.getElementById('assign-payment-method-type').value;
+    const assignedValue = document.getElementById('assign-payment-method-value').value.trim();
+
+    if (!requestId || !methodType) {
+        showToast('Request data is missing.');
+        return;
+    }
+
+    if (!assignedValue) {
+        showToast(`Please enter the ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} details.`);
+        return;
+    }
+
+    try {
+        const { error } = await window.supabase
+            .from('payment_method_requests')
+            .update({
+                assigned_value: assignedValue,
+                status: 'assigned',
+                assigned_at: new Date().toISOString()
+            })
+            .eq('id', requestId)
+            .eq('method_type', methodType);
+
+        if (error) throw error;
+
+        await window.supabase.from('notifications_log').insert([{
+            title: `${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Details Assigned`,
+            body: `Your ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} payment details have been assigned for this shipment.`,
+            event_type: 'payment_method_assigned',
+            related_id: requestId
+        }]);
+
+        showToast(`✓ ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} details assigned! Receiver notified.`, true);
+        bootstrap.Modal.getInstance(document.getElementById('assignPaymentMethodModal')).hide();
+        bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
+        await loadPayments();
+    } catch (err) {
+        showToast('Error assigning payment details: ' + err.message);
     }
 }
 

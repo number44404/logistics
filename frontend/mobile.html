@@ -538,6 +538,29 @@
             </div>
         </div>
     </div>
+
+    <!-- Assign Payment Method Modal (PayPal / Cash App) -->
+    <div class="modal fade" id="assignPaymentMethodModal" tabindex="-1" aria-hidden="true" style="z-index: 9999;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow-lg">
+                <div class="modal-header bg-ups-brown text-white border-0">
+                    <h5 class="modal-title fw-bold"><span class="material-symbols-rounded align-middle me-2">payments</span>Assign Payment Details</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <input type="hidden" id="assign-payment-method-request-id">
+                    <input type="hidden" id="assign-payment-method-type">
+
+                    <div class="mb-3">
+                        <label class="fw-bold mb-2 small text-uppercase" id="assign-payment-method-label">Assigned Value</label>
+                        <input type="text" class="form-control rounded" id="assign-payment-method-value" placeholder="e.g. paypal.me/username or $cashapphandle" required>
+                    </div>
+
+                    <button type="button" class="btn btn-ups w-100 fw-bold py-2" onclick="confirmAssignPaymentMethod()">Send Details to Receiver</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
     <!-- Payment Detail Modal -->
     <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">

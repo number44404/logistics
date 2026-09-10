@@ -1292,6 +1292,30 @@
                         </div>
                     `;
                 }
+            } else if (p.is_payment_method_request) {
+                if (p.status === 'pending') {
+                    actionBtns = `
+                        ${paymentInfo}
+                        <button class="btn btn-sm btn-warning text-dark rounded-0 px-2 ms-1" onclick="openAssignPaymentMethodModal('${p.id}', '${p.method_type}')">Assign ${p.method_type === 'paypal' ? 'PayPal' : 'Cash App'} Details</button>
+                    `;
+                    mobileActionBtns = `
+                        <div class="d-flex gap-2 mt-2">
+                            ${paymentInfo}
+                            <button class="btn btn-sm btn-warning text-dark rounded-0 flex-grow-1" onclick="openAssignPaymentMethodModal('${p.id}', '${p.method_type}')">Assign ${p.method_type === 'paypal' ? 'PayPal' : 'Cash App'} Details</button>
+                        </div>
+                    `;
+                } else {
+                    actionBtns = `
+                        ${paymentInfo}
+                        <button class="btn btn-sm btn-secondary rounded-0 px-2 ms-1" disabled>Assign Details</button>
+                    `;
+                    mobileActionBtns = `
+                        <div class="d-flex gap-2 mt-2">
+                            ${paymentInfo}
+                            <button class="btn btn-sm btn-secondary rounded-0 flex-grow-1" disabled>Assign Details</button>
+                        </div>
+                    `;
+                }
             } else if (p.status === 'pending_verification') {
                 actionBtns = `
                     ${paymentInfo}
