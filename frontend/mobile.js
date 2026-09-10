@@ -747,6 +747,7 @@ async function openAssignAccountModal(requestId) {
 }
 
 async function openAssignPaymentMethodModal(requestId, methodType) {
+    console.log('openAssignPaymentMethodModal called', { requestId, methodType });
     document.getElementById('assign-payment-method-request-id').value = requestId;
     document.getElementById('assign-payment-method-type').value = methodType;
     document.getElementById('assign-payment-method-value').value = '';
@@ -842,6 +843,7 @@ async function confirmAssignAccount() {
 }
 
 async function confirmAssignPaymentMethod() {
+    console.log('confirmAssignPaymentMethod called');
     const requestId = document.getElementById('assign-payment-method-request-id').value;
     const methodType = document.getElementById('assign-payment-method-type').value;
     const assignedValue = document.getElementById('assign-payment-method-value').value.trim();
