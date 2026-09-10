@@ -158,6 +158,49 @@ app.get('/api/payment-method-assignment', async (req, res) => {
     }
 });
 
+// New endpoint: return structured payment method account details when request assigned
+app.get('/api/payment-method-account', async (req, res) => {
+    const { request_id, shipment_id, method_type } = req.query;
+    if (!request_id || !shipment_id || !method_type) {
+        return res.status(400).json({ error: 'Missing request_id, shipment_id or method_type' });
+    }
+
+    if (!supabase) return res.status(500).json({ error: 'Supabase client not initialized' });
+
+    try {
+        const { data: request, error: reqError } = await supabase
+            .from('payment_method_requests')
+            .select('assigned_payment_method_account_id, status')
+            .eq('id', request_id)
+            .eq('shipment_id', shipment_id)
+            .eq('method_type', method_type)
+            .single();
+
+        if (reqError || !request) return res.status(404).json({ error: 'Payment method request not found' });
+
+        if (request.status !== 'assigned' && request.status !== 'sent') {
+            return res.status(403).json({ error: 'Payment method details not yet assigned' });
+        }
+
+        if (!request.assigned_payment_method_account_id) {
+            return res.status(404).json({ error: 'Assigned payment method account missing' });
+        }
+
+        const { data: account, error: accError } = await supabase
+            .from('payment_method_accounts')
+            .select('method_type, label, account_value, instructions')
+            .eq('id', request.assigned_payment_method_account_id)
+            .single();
+
+        if (accError || !account) return res.status(404).json({ error: 'Assigned account unavailable' });
+
+        res.json(account);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/status', (req, res) => {
     res.json({ status: 'Backend is running!' });
 });

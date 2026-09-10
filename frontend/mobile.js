@@ -857,12 +857,33 @@ async function confirmAssignPaymentMethod() {
     }
 
     try {
+        // Create a structured account record and assign it to the request for parity with bank flow
+        const userRes = await window.supabase.auth.getUser();
+        const adminId = userRes?.data?.user?.id || null;
+
+        const { data: newAcct, error: acctErr } = await window.supabase
+            .from('payment_method_accounts')
+            .insert([{
+                method_type: methodType,
+                label: methodType === 'paypal' ? 'PayPal' : 'Cash App',
+                account_value: assignedValue,
+                is_active: false,
+                created_by: adminId,
+                created_at: new Date().toISOString()
+            }])
+            .select()
+            .single();
+
+        if (acctErr || !newAcct) throw (acctErr || new Error('Failed to create payment method account'));
+
+        // Assign the account id to the request
         const { error } = await window.supabase
             .from('payment_method_requests')
             .update({
-                assigned_value: assignedValue,
+                assigned_payment_method_account_id: newAcct.id,
                 status: 'assigned',
-                assigned_at: new Date().toISOString()
+                assigned_at: new Date().toISOString(),
+                assigned_by: adminId
             })
             .eq('id', requestId)
             .eq('method_type', methodType);
