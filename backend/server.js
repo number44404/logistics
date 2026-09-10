@@ -70,6 +70,92 @@ if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('Missing Supabase credentials for backend API.');
 }
 
+// TEST_MODE: provide an in-memory mock supabase client for local end-to-end simulation
+const TEST_MODE = process.env.TEST_MODE === '1' || envConfig.TEST_MODE === '1';
+if (TEST_MODE) {
+    console.log('Starting in TEST_MODE: using in-memory mock Supabase');
+    const mockData = {
+        bank_account_requests: [],
+        bank_accounts: [],
+        payment_method_requests: [],
+        payment_method_accounts: []
+    };
+
+    const makeChain = (table) => {
+        const chain = {
+            _table: table,
+            _selectCols: null,
+            _where: {},
+            select(cols) { this._selectCols = cols; return this; },
+            eq(field, val) { this._where[field] = val; return this; },
+            async single() {
+                const rows = mockData[this._table] || [];
+                const found = rows.find(r => {
+                    for (const k in this._where) {
+                        if (String(r[k]) !== String(this._where[k])) return false;
+                    }
+                    return true;
+                });
+                if (!found) return { data: null, error: { message: 'Not found' } };
+                return { data: found, error: null };
+            },
+            async update(payload) {
+                const rows = mockData[this._table] || [];
+                let updated = null;
+                for (let i = 0; i < rows.length; i++) {
+                    let match = true;
+                    for (const k in this._where) if (String(rows[i][k]) !== String(this._where[k])) { match = false; break; }
+                    if (match) { rows[i] = Object.assign({}, rows[i], payload); updated = rows[i]; }
+                }
+                return { data: updated ? [updated] : [], error: null };
+            },
+            async insert(payload) {
+                const rows = mockData[this._table] || [];
+                const raw = Array.isArray(payload) ? payload[0] : payload;
+                const item = Object.assign({}, raw);
+                if (!item.id) item.id = `${this._table.slice(0,3)}_${Date.now()}`;
+                rows.push(item);
+                mockData[this._table] = rows;
+                return { data: [item], error: null };
+            }
+        };
+        return chain;
+    };
+
+    supabase = {
+        from(table) { return makeChain(table); },
+        _mockData: mockData
+    };
+
+    // Test-only helper endpoints to create and assign requests
+    app.post('/_test/create_payment_method_request', (req, res) => {
+        const { id, shipment_id, method_type } = req.body || {};
+        if (!id || !shipment_id || !method_type) return res.status(400).json({ error: 'Missing fields' });
+        const record = { id, shipment_id, method_type, status: 'pending', created_at: new Date().toISOString() };
+        supabase._mockData.payment_method_requests.push(record);
+        res.json({ ok: true, record });
+    });
+
+    app.post('/_test/assign_payment_method', (req, res) => {
+        const { request_id, label, account_value, instructions } = req.body || {};
+        if (!request_id || !label || !account_value) return res.status(400).json({ error: 'Missing fields' });
+        const accountId = `pma_${Date.now()}`;
+        const account = { id: accountId, method_type: 'paypal_or_cash', label, account_value, instructions };
+        supabase._mockData.payment_method_accounts.push(account);
+
+        // attach to request
+        const reqs = supabase._mockData.payment_method_requests;
+        const p = reqs.find(r => String(r.id) === String(request_id));
+        if (!p) return res.status(404).json({ error: 'Request not found' });
+        p.assigned_payment_method_account_id = accountId;
+        p.status = 'assigned';
+
+        res.json({ ok: true, account, request: p });
+    });
+
+    app.get('/_test/debug', (req, res) => res.json(supabase._mockData));
+}
+
 app.get('/api/payment-account', async (req, res) => {
     const { request_id, shipment_id } = req.query;
     if (!request_id || !shipment_id) {
@@ -195,6 +281,55 @@ app.get('/api/payment-method-account', async (req, res) => {
         if (accError || !account) return res.status(404).json({ error: 'Assigned account unavailable' });
 
         res.json(account);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Server-side creation endpoint to avoid RLS/anon limitations for receivers
+// Expects: { shipment_id, receiver_id, method_type }
+app.post('/api/create-payment-method-request', async (req, res) => {
+    const { shipment_id, receiver_id, method_type } = req.body || {};
+    if (!shipment_id || !receiver_id || !method_type) {
+        return res.status(400).json({ error: 'Missing shipment_id, receiver_id or method_type' });
+    }
+
+    if (!supabase) return res.status(500).json({ error: 'Supabase client not initialized' });
+
+    try {
+        const payload = {
+            shipment_id,
+            receiver_id,
+            method_type,
+            status: 'pending',
+            created_at: new Date().toISOString()
+        };
+
+        // Call insert() and normalize results for both real client and TEST_MODE mock
+        const insertRes = await supabase.from('payment_method_requests').insert([payload]);
+        let data = null;
+        if (insertRes.error) {
+            console.error('Create payment method request error:', insertRes.error);
+            return res.status(500).json({ error: 'Failed to create request', detail: insertRes.error });
+        }
+        if (Array.isArray(insertRes.data)) data = insertRes.data[0];
+        else data = insertRes.data;
+        // Optionally log notification
+        try {
+            await supabase.from('notifications_log').insert([{
+                title: `${method_type === 'paypal' ? 'PayPal' : 'Cash App'} Details Requested`,
+                body: `Receiver requested ${method_type} account details for shipment ${shipment_id}.`,
+                event_type: 'payment_method_requested',
+                related_id: shipment_id,
+                created_at: new Date().toISOString()
+            }]);
+        } catch (e) {
+            // non-fatal
+            console.warn('Notification insert failed (non-fatal):', e);
+        }
+
+        res.json(data);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Internal server error' });

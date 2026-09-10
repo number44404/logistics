@@ -1152,26 +1152,20 @@
                         return;
                     }
                 } else {
-                    const { data: newReq, error: insertError } = await window.supabase
-                        .from('payment_method_requests')
-                        .insert([{
-                            shipment_id: shipmentId,
-                            receiver_id: receiverId,
-                            method_type: methodType,
-                            status: 'pending'
-                        }])
-                        .select()
-                        .single();
+                    // Use server-side endpoint to create the request (avoids RLS with anon key)
+                    const createRes = await fetch('/api/create-payment-method-request', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ shipment_id: shipmentId, receiver_id: receiverId, method_type: methodType })
+                    });
 
-                    if (insertError) throw insertError;
+                    if (!createRes.ok) {
+                        const err = await createRes.json().catch(() => ({}));
+                        throw new Error(err.error || 'Failed to create payment method request');
+                    }
+
+                    const newReq = await createRes.json();
                     requestId = newReq.id;
-
-                    await window.supabase.from('notifications_log').insert([{
-                        title: `${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Details Requested`,
-                        body: `Receiver requested ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} account details for shipment ${generatedTrackingNumber}.`,
-                        event_type: 'payment_method_requested',
-                        related_id: shipmentId
-                    }]);
                 }
 
                 if (requestId) {
