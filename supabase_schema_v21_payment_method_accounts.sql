@@ -41,5 +41,14 @@ $$ LANGUAGE plpgsql;
 ALTER TABLE IF EXISTS payment_method_requests ENABLE ROW LEVEL SECURITY;
 
 -- Add publication for realtime if needed
-ALTER PUBLICATION supabase_realtime
-    ADD TABLE payment_method_accounts;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE schemaname = 'public' AND tablename = 'payment_method_accounts'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime
+            ADD TABLE payment_method_accounts;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;

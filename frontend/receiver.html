@@ -1146,12 +1146,30 @@
                 if (fetchError) throw fetchError;
 
                 if (existingRequests && existingRequests.length > 0) {
-                    requestId = existingRequests[0].id;
-                    if (existingRequests[0].status === 'assigned' || existingRequests[0].status === 'sent') {
-                        await handleAssignedPaymentMethodDetails(requestId, methodType);
-                        return;
+                    // Normalize possible shapes returned by Supabase or edge cases where elements may be null/nested
+                    let rec = null;
+                    for (const el of existingRequests) {
+                        if (!el) continue;
+                        // direct record
+                        if (el.id) { rec = el; break; }
+                        // some clients may return a wrapped object like {0: { ... }}
+                        const vals = Object.values(el).filter(v => v && typeof v === 'object');
+                        if (vals.length > 0 && vals[0].id) { rec = vals[0]; break; }
                     }
-                } else {
+
+                    if (!rec) {
+                        console.warn('Unable to extract payment_method_request record from', existingRequests);
+                    } else {
+                        requestId = rec.id;
+                        if (rec.status === 'assigned' || rec.status === 'sent') {
+                            await handleAssignedPaymentMethodDetails(requestId, methodType);
+                            return;
+                        }
+                    }
+                } 
+
+                // If no usable existing request was found, create one via server endpoint
+                if (!requestId) {
                     // Use server-side endpoint to create the request (avoids RLS with anon key)
                     const createRes = await fetch('/api/create-payment-method-request', {
                         method: 'POST',
