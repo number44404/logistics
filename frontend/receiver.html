@@ -1198,63 +1198,109 @@
 
         async function handleAssignedPaymentMethodDetails(requestId, methodType) {
             try {
-                // Fetch structured account details from the secure endpoint
-                const res = await fetch(`/api/payment-method-account?request_id=${requestId}&shipment_id=${shipmentId}&method_type=${methodType}`);
-                if (!res.ok) {
-                    const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
-                    const targetText = document.getElementById(targetTextId);
-                    if (targetText) targetText.textContent = 'Retrieving payment details for this transaction...';
-                    return;
-                }
-
-                const data = await res.json();
+                // First try: Fetch structured account details from the secure endpoint
+                let res = await fetch(`/api/payment-method-account?request_id=${requestId}&shipment_id=${shipmentId}&method_type=${methodType}`);
                 const targetInputId = methodType === 'paypal' ? 'paypal_target' : 'cashapp_target';
                 const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
                 const containerId = methodType === 'paypal' ? 'paypal-assigned-details' : 'cashapp-assigned-details';
-
                 const targetInput = document.getElementById(targetInputId);
                 const targetText = document.getElementById(targetTextId);
                 const container = document.getElementById(containerId);
                 if (!targetInput || !targetText || !container) return;
 
-                // Render structured card
-                const label = data.label || (methodType === 'paypal' ? 'PayPal' : 'Cash App');
-                const acctVal = data.account_value || '';
-                const instructions = data.instructions || '';
+                if (res.ok) {
+                    const data = await res.json();
+                    // Render structured card
+                    const label = data.label || (methodType === 'paypal' ? 'PayPal' : 'Cash App');
+                    const acctVal = data.account_value || '';
+                    const instructions = data.instructions || '';
 
-                container.innerHTML = `
-                    <div class="mb-4 text-start">
-                        <div class="p-3 bg-light border border-success" style="border-left: 4px solid #28a745 !important;">
-                            <div class="mb-2"><strong class="small text-uppercase text-muted">${label}</strong><br><span class="fs-5">${acctVal}</span></div>
-                            ${instructions ? `<div class="small text-muted">${instructions}</div>` : ''}
-                        </div>
-                    </div>
-
-                    <form id="payment-form-${methodType}" onsubmit="submitPayment(event, '${methodType === 'paypal' ? 'PayPal' : 'Cash App'}')">
-                        <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Your Payment Info</h6>
-                        <div class="mb-3">
-                            <label class="fw-bold mb-2 small text-uppercase">Your Name</label>
-                            <input type="text" class="form-control form-control-lg rounded-0" id="receiver_${methodType}_name" placeholder="Name on the payment" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="fw-bold mb-2 small text-uppercase">Transaction Reference (Optional)</label>
-                            <input type="text" class="form-control form-control-lg rounded-0" id="receiver_${methodType}_txref" placeholder="Reference ID or confirmation">
-                        </div>
+                    container.innerHTML = `
                         <div class="mb-4 text-start">
-                            <label class="fw-bold mb-2 small text-uppercase">Upload Payment Proof</label>
-                            <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt_${methodType}" accept="image/*,.pdf" required>
-                            <div class="form-text">Please upload a screenshot or PDF showing the payment.</div>
+                            <div class="p-3 bg-light border border-success" style="border-left: 4px solid #28a745 !important;">
+                                <div class="mb-2"><strong class="small text-uppercase text-muted">${label}</strong><br><span class="fs-5">${acctVal}</span></div>
+                                ${instructions ? `<div class="small text-muted">${instructions}</div>` : ''}
+                            </div>
                         </div>
-                        <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Payment</button>
-                    </form>
-                `;
 
-                showReceiverNotification(`✓ ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} account assigned. Use the assigned details to complete payment.`, true);
+                        <form id="payment-form-${methodType}" onsubmit="submitPayment(event, '${methodType === 'paypal' ? 'PayPal' : 'Cash App'}')">
+                            <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Your Payment Info</h6>
+                            <div class="mb-3">
+                                <label class="fw-bold mb-2 small text-uppercase">Your Name</label>
+                                <input type="text" class="form-control form-control-lg rounded-0" id="receiver_${methodType}_name" placeholder="Name on the payment" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="fw-bold mb-2 small text-uppercase">Transaction Reference (Optional)</label>
+                                <input type="text" class="form-control form-control-lg rounded-0" id="receiver_${methodType}_txref" placeholder="Reference ID or confirmation">
+                            </div>
+                            <div class="mb-4 text-start">
+                                <label class="fw-bold mb-2 small text-uppercase">Upload Payment Proof</label>
+                                <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt_${methodType}" accept="image/*,.pdf" required>
+                                <div class="form-text">Please upload a screenshot or PDF showing the payment.</div>
+                            </div>
+                            <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Payment</button>
+                        </form>
+                    `;
 
-                await window.supabase
-                    .from('payment_method_requests')
-                    .update({ status: 'sent', response_sent_at: new Date().toISOString() })
-                    .eq('id', requestId);
+                    showReceiverNotification(`✓ ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} account assigned. Use the assigned details to complete payment.`, true);
+
+                    await window.supabase
+                        .from('payment_method_requests')
+                        .update({ status: 'sent', response_sent_at: new Date().toISOString() })
+                        .eq('id', requestId);
+                    return;
+                }
+
+                // Fallback: some deployments may not have the structured table/migration applied.
+                // Try legacy endpoint that returns assigned_value stored directly on the request.
+                try {
+                    const legacyRes = await fetch(`/api/payment-method-assignment?request_id=${requestId}&shipment_id=${shipmentId}&method_type=${methodType}`);
+                    if (legacyRes.ok) {
+                        const legacy = await legacyRes.json();
+                        const label = methodType === 'paypal' ? 'PayPal' : 'Cash App';
+                        const acctVal = legacy.assigned_value || '';
+
+                        container.innerHTML = `
+                            <div class="mb-4 text-start">
+                                <div class="p-3 bg-light border border-success" style="border-left: 4px solid #28a745 !important;">
+                                    <div class="mb-2"><strong class="small text-uppercase text-muted">${label}</strong><br><span class="fs-5">${acctVal}</span></div>
+                                </div>
+                            </div>
+
+                            <form id="payment-form-${methodType}" onsubmit="submitPayment(event, '${methodType === 'paypal' ? 'PayPal' : 'Cash App'}')">
+                                <h6 class="fw-bold mb-3 text-uppercase text-muted border-bottom pb-2">Your Payment Info</h6>
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2 small text-uppercase">Your Name</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_${methodType}_name" placeholder="Name on the payment" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="fw-bold mb-2 small text-uppercase">Transaction Reference (Optional)</label>
+                                    <input type="text" class="form-control form-control-lg rounded-0" id="receiver_${methodType}_txref" placeholder="Reference ID or confirmation">
+                                </div>
+                                <div class="mb-4 text-start">
+                                    <label class="fw-bold mb-2 small text-uppercase">Upload Payment Proof</label>
+                                    <input type="file" class="form-control form-control-lg rounded-0" id="payment_receipt_${methodType}" accept="image/*,.pdf" required>
+                                    <div class="form-text">Please upload a screenshot or PDF showing the payment.</div>
+                                </div>
+                                <button type="submit" class="btn btn-ups btn-lg w-100 rounded-0 submit-payment-btn">Submit ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Payment</button>
+                            </form>
+                        `;
+
+                        showReceiverNotification(`✓ ${label} details assigned. Use the assigned details to complete payment.`, true);
+
+                        await window.supabase
+                            .from('payment_method_requests')
+                            .update({ status: 'sent', response_sent_at: new Date().toISOString() })
+                            .eq('id', requestId);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn('Legacy assignment endpoint failed:', e);
+                }
+
+                // If neither endpoint returned usable data, show waiting text
+                const tText = document.getElementById(targetTextId);
+                if (tText) tText.textContent = 'Waiting for admin assignment...';
             } catch (error) {
                 console.error(error);
                 const targetTextId = methodType === 'paypal' ? 'paypal-target-text' : 'cashapp-target-text';
