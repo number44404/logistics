@@ -748,21 +748,72 @@ async function openAssignAccountModal(requestId) {
 
 async function openAssignPaymentMethodModal(requestId, methodType) {
     console.log('openAssignPaymentMethodModal called', { requestId, methodType });
-    document.getElementById('assign-payment-method-request-id').value = requestId;
-    document.getElementById('assign-payment-method-type').value = methodType;
-    document.getElementById('assign-payment-method-value').value = '';
 
+    const reqEl = document.getElementById('assign-payment-method-request-id');
+    const typeEl = document.getElementById('assign-payment-method-type');
+    const valueEl = document.getElementById('assign-payment-method-value');
     const label = document.getElementById('assign-payment-method-label');
-    const input = document.getElementById('assign-payment-method-value');
-    if (methodType === 'paypal') {
-        label.textContent = 'PayPal Email / Username';
-        input.placeholder = 'e.g. paypal.me/username or username@example.com';
-    } else {
-        label.textContent = 'Cash App Cashtag / Username';
-        input.placeholder = 'e.g. $cashappname or @username';
+
+    // If modal inputs are missing (WebView DOM mismatch), fallback to prompt-based assignment
+    if (!reqEl || !typeEl || !valueEl || !label) {
+        console.warn('Assign modal elements missing; falling back to prompt input', { reqEl, typeEl, valueEl, label });
+        const fallback = window.prompt(`Enter ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} details to assign:`);
+        if (fallback && fallback.trim()) {
+            await assignPaymentMethodDirect(requestId, methodType, fallback.trim());
+        } else {
+            showToast('Assignment cancelled');
+        }
+        return;
+    }
+
+    try {
+        if (reqEl) reqEl.value = requestId;
+        if (typeEl) typeEl.value = methodType;
+        if (valueEl) valueEl.value = '';
+
+        if (methodType === 'paypal') {
+            if (label) label.textContent = 'PayPal Email / Username';
+            if (valueEl) valueEl.placeholder = 'e.g. paypal.me/username or username@example.com';
+        } else {
+            if (label) label.textContent = 'Cash App Cashtag / Username';
+            if (valueEl) valueEl.placeholder = 'e.g. $cashappname or @username';
+        }
+    } catch (e) {
+        console.error('Error populating assign modal fields', e);
     }
 
     new bootstrap.Modal(document.getElementById('assignPaymentMethodModal')).show();
+}
+
+// Fallback assigner used when modal DOM is not available (useful for WebView edge-cases)
+async function assignPaymentMethodDirect(requestId, methodType, assignedValue) {
+    try {
+        const userRes = await window.supabase.auth.getUser();
+        const adminId = userRes?.data?.user?.id || null;
+
+        const { data: newAcct, error: acctErr } = await window.supabase
+            .from('payment_method_accounts')
+            .insert([{ method_type: methodType, label: methodType === 'paypal' ? 'PayPal' : 'Cash App', account_value: assignedValue, is_active: false, created_by: adminId, created_at: new Date().toISOString() }])
+            .select()
+            .single();
+
+        if (acctErr || !newAcct) throw (acctErr || new Error('Failed to create payment method account'));
+
+        const { error } = await window.supabase
+            .from('payment_method_requests')
+            .update({ assigned_payment_method_account_id: newAcct.id, status: 'assigned', assigned_at: new Date().toISOString(), assigned_by: adminId })
+            .eq('id', requestId)
+            .eq('method_type', methodType);
+
+        if (error) throw error;
+
+        await window.supabase.from('notifications_log').insert([{ title: `${methodType === 'paypal' ? 'PayPal' : 'Cash App'} Details Assigned`, body: `Your ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} payment details have been assigned for this shipment.`, event_type: 'payment_method_assigned', related_id: requestId }]);
+
+        showToast(`✓ ${methodType === 'paypal' ? 'PayPal' : 'Cash App'} details assigned! Receiver notified.`, true);
+        await loadPayments();
+    } catch (err) {
+        showToast('Error assigning payment details: ' + err.message);
+    }
 }
 
 async function confirmAssignAccount() {

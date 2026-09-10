@@ -1130,6 +1130,13 @@
             const targetInput = document.getElementById(targetInputId);
             if (!container || !targetText || !targetInput) return;
 
+            // Defensive: ensure shipmentId is present and looks like a valid UUID before querying backend
+            if (!shipmentId || (typeof shipmentId === 'string' && !/^[0-9a-fA-F\-]{36}$/.test(shipmentId))) {
+                targetText.textContent = 'Waiting for a valid shipment link...';
+                console.warn('requestPaymentMethodAssignment aborted: invalid shipmentId', shipmentId);
+                return;
+            }
+
             targetText.textContent = 'Retrieving payment details for this transaction...';
             targetInput.value = '';
 
