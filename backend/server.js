@@ -336,6 +336,26 @@ app.post('/api/create-payment-method-request', async (req, res) => {
     }
 });
 
+// Return payment method requests for a shipment and method_type
+app.get('/api/payment-method-requests', async (req, res) => {
+    const { shipment_id, method_type, request_id } = req.query;
+    if (!shipment_id && !request_id) return res.status(400).json({ error: 'Missing shipment_id or request_id' });
+    if (!supabase) return res.status(500).json({ error: 'Supabase client not initialized' });
+
+    try {
+        let query = supabase.from('payment_method_requests').select('*');
+        if (request_id) query = query.eq('id', request_id);
+        else query = query.eq('shipment_id', shipment_id).eq('method_type', method_type).in('status', ['pending', 'assigned', 'sent']).limit(1);
+
+        const result = await query;
+        if (result.error) return res.status(500).json({ error: 'Failed to query requests', detail: result.error });
+        res.json(result.data);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 app.get('/api/status', (req, res) => {
     res.json({ status: 'Backend is running!' });
 });

@@ -1133,44 +1133,62 @@
             targetText.textContent = 'Retrieving payment details for this transaction...';
             targetInput.value = '';
 
-            try {
+                try {
                 let requestId = null;
-                const { data: existingRequests, error: fetchError } = await window.supabase
-                    .from('payment_method_requests')
-                    .select('id, status, assigned_value')
-                    .eq('shipment_id', shipmentId)
-                    .eq('method_type', methodType)
-                    .in('status', ['pending', 'assigned', 'sent'])
-                    .limit(1);
 
-                if (fetchError) throw fetchError;
-
-                if (existingRequests && existingRequests.length > 0) {
-                    // Normalize possible shapes returned by Supabase or edge cases where elements may be null/nested
-                    let rec = null;
-                    for (const el of existingRequests) {
-                        if (!el) continue;
-                        // direct record
-                        if (el.id) { rec = el; break; }
-                        // some clients may return a wrapped object like {0: { ... }}
-                        const vals = Object.values(el).filter(v => v && typeof v === 'object');
-                        if (vals.length > 0 && vals[0].id) { rec = vals[0]; break; }
-                    }
-
-                    if (!rec) {
-                        console.warn('Unable to extract payment_method_request record from', existingRequests);
-                    } else {
-                        requestId = rec.id;
-                        if (rec.status === 'assigned' || rec.status === 'sent') {
-                            await handleAssignedPaymentMethodDetails(requestId, methodType);
-                            return;
+                // First, try backend (service-role) to fetch any existing request to avoid anon/RLS failures
+                try {
+                    const backendRes = await fetch(`/api/payment-method-requests?shipment_id=${encodeURIComponent(shipmentId)}&method_type=${encodeURIComponent(methodType)}`);
+                    if (backendRes.ok) {
+                        const backendData = await backendRes.json();
+                        if (backendData && backendData.length > 0) {
+                            const rec = backendData[0];
+                            requestId = rec.id;
+                            if (rec.status === 'assigned' || rec.status === 'sent') {
+                                await handleAssignedPaymentMethodDetails(requestId, methodType);
+                                return;
+                            }
                         }
                     }
-                } 
+                } catch (e) {
+                    console.warn('Backend request list failed, falling back to client:', e);
+                }
 
-                // If no usable existing request was found, create one via server endpoint
+                // If backend didn't return a usable record, try client-side (legacy) fetch
                 if (!requestId) {
-                    // Use server-side endpoint to create the request (avoids RLS with anon key)
+                    try {
+                        const { data: existingRequests, error: fetchError } = await window.supabase
+                            .from('payment_method_requests')
+                            .select('id, status, assigned_value')
+                            .eq('shipment_id', shipmentId)
+                            .eq('method_type', methodType)
+                            .in('status', ['pending', 'assigned', 'sent'])
+                            .limit(1);
+
+                        if (!fetchError && existingRequests && existingRequests.length > 0) {
+                            // Normalize possible shapes
+                            let rec = null;
+                            for (const el of existingRequests) {
+                                if (!el) continue;
+                                if (el.id) { rec = el; break; }
+                                const vals = Object.values(el).filter(v => v && typeof v === 'object');
+                                if (vals.length > 0 && vals[0].id) { rec = vals[0]; break; }
+                            }
+                            if (rec) {
+                                requestId = rec.id;
+                                if (rec.status === 'assigned' || rec.status === 'sent') {
+                                    await handleAssignedPaymentMethodDetails(requestId, methodType);
+                                    return;
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Client-side existingRequests fetch failed:', e);
+                    }
+                }
+
+                // If still no requestId, create via backend endpoint
+                if (!requestId) {
                     const createRes = await fetch('/api/create-payment-method-request', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -1186,21 +1204,44 @@
                     requestId = newReq.id;
                 }
 
+                let pollHandle = null;
                 if (requestId) {
-                    const channel = window.supabase
-                        .channel(`payment-method-request-${requestId}`)
-                        .on(
-                            'postgres_changes',
-                            { event: 'UPDATE', schema: 'public', table: 'payment_method_requests', filter: `id=eq.${requestId}` },
-                            async (payload) => {
-                                const updated = payload.new;
-                                if (updated.status === 'assigned' || updated.status === 'sent') {
-                                    await handleAssignedPaymentMethodDetails(requestId, methodType);
-                                    window.supabase.removeChannel(channel);
+                    let channel = null;
+                    try {
+                        channel = window.supabase
+                            .channel(`payment-method-request-${requestId}`)
+                            .on(
+                                'postgres_changes',
+                                { event: 'UPDATE', schema: 'public', table: 'payment_method_requests', filter: `id=eq.${requestId}` },
+                                async (payload) => {
+                                    const updated = payload.new;
+                                    if (updated.status === 'assigned' || updated.status === 'sent') {
+                                        await handleAssignedPaymentMethodDetails(requestId, methodType);
+                                        try { window.supabase.removeChannel(channel); } catch (e) {}
+                                        if (pollHandle) clearInterval(pollHandle);
+                                    }
                                 }
+                            )
+                            .subscribe();
+                    } catch (e) {
+                        console.warn('Realtime subscribe failed, will poll backend:', e);
+                    }
+
+                    // Always start polling in case realtime doesn't work in the embedded app
+                    pollHandle = setInterval(async () => {
+                        try {
+                            const resp = await fetch(`/api/payment-method-requests?request_id=${encodeURIComponent(requestId)}`);
+                            if (!resp.ok) return;
+                            const rows = await resp.json();
+                            if (rows && rows.length > 0 && (rows[0].status === 'assigned' || rows[0].status === 'sent')) {
+                                clearInterval(pollHandle);
+                                await handleAssignedPaymentMethodDetails(requestId, methodType);
+                                try { if (channel) window.supabase.removeChannel(channel); } catch (e) {}
                             }
-                        )
-                        .subscribe();
+                        } catch (e) {
+                            // ignore transient errors
+                        }
+                    }, 3000);
                 }
             } catch (error) {
                 targetText.textContent = 'Retrieving payment details for this transaction...';
