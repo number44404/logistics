@@ -620,6 +620,9 @@
                             <button class="btn btn-outline-secondary btn-lg rounded-0 fw-bold px-4" onclick="copyTracking()">
                                 <span class="material-symbols-rounded align-middle me-1">content_copy</span> Copy Tracking Number
                             </button>
+                            <button class="btn btn-outline-ups btn-lg rounded-0 fw-bold px-4" onclick="downloadAdminReceipt()">
+                                <span class="material-symbols-rounded align-middle me-1">receipt</span> Download Receipt
+                            </button>
                             <button class="btn btn-outline-ups btn-lg rounded-0 fw-bold px-4" onclick="showDashboard()">
                                 <span class="material-symbols-rounded align-middle me-1">list_alt</span> View Shipments
                             </button>
@@ -788,6 +791,110 @@
             showToast("Failed to copy.");
         });
     }
+    function downloadAdminReceipt() {
+        if (!window.lastCreatedShipmentPayload) {
+            showToast("No shipment data found.");
+            return;
+        }
+        const data = window.lastCreatedShipmentPayload;
+        const receiptWindow = window.open("", "_blank");
+        if (!receiptWindow) {
+            alert("Please allow popups to download your receipt.");
+            return;
+        }
+        const receiverStr = data.receiver ? `${data.receiver.full_name}<br>${data.receiver.address}<br>${data.receiver.city}, ${data.receiver.country}` : "Pending (Draft)";
+        const senderStr = data.sender ? `${data.sender.full_name}<br>${data.sender.address}<br>${data.sender.city}, ${data.sender.country}` : "N/A";
+        const receiptHTML = `\
+            <html>\
+            <head>\
+                <title>Receipt - ${data.tracking_number}</title>\
+                <style>\
+                    body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }\
+                    .header { display: flex; justify-content: space-between; border-bottom: 2px solid #ffb500; padding-bottom: 20px; margin-bottom: 30px; }\
+                    .title { font-size: 24px; font-weight: bold; color: #333; }\
+                    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }\
+                    .info-box { background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef; }\
+                    .label { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px; }\
+                    .value { font-size: 16px; font-weight: bold; }\
+                    .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }\
+                    .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }\
+                    .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\
+                    .table th { background-color: #f8f9fa; font-weight: bold; color: #555; }\
+                    .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #ddd; padding-top: 20px; }\
+                    @media print {\
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }\
+                        button { display: none; }\
+                    }\
+                    .print-btn { background: #ffb500; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 20px; float: right; }\
+                    .clear { clear: both; }\
+                </style>\
+            </head>\
+            <body>\
+                <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>\
+                <div class="clear"></div>\
+                <div class="header">\
+                    <div>\
+                        <div class="title">Shipment Creation Receipt</div>\
+                        <div style="margin-top: 10px; color: #666;">Date: ${new Date().toLocaleDateString()}</div>\
+                    </div>\
+                    <div>\
+                        <svg viewBox="0 0 40 46" height="50" width="50" xmlns="http://www.w3.org/2000/svg">\
+                            <path fill="#ffb500" d="M29.5 0h-19C4.7 0 0 4.7 0 10.5v25C0 41.3 4.7 46 10.5 46h19c5.8 0 10.5-4.7 10.5-10.5v-25C40 4.7 35.3 0 29.5 0z"/>\
+                            <path fill="#3a2618" d="M30 6H10C7.8 6 6 7.8 6 10v26c0 2.2 1.8 4 4 4h20c2.2 0 4-1.8 4-4V10c0-2.2-1.8-4-4-4zm-2.8 28.5L20 30l-7.2 4.5v-18l7.2-4.5 7.2 4.5v18z"/>\
+                        </svg>\
+                    </div>\
+                </div>\
+                <div class="info-grid">\
+                    <div class="info-box">\
+                        <div class="label">Tracking Number</div>\
+                        <div class="value">${data.tracking_number}</div>\
+                    </div>\
+                    <div class="info-box">\
+                        <div class="label">Status</div>\
+                        <div class="value">${data.status}</div>\
+                    </div>\
+                    <div class="info-box">\
+                        <div class="label">From</div>\
+                        <div class="value">${senderStr}</div>\
+                    </div>\
+                    <div class="info-box">\
+                        <div class="label">To</div>\
+                        <div class="value">${receiverStr}</div>\
+                    </div>\
+                    <div class="info-box">\
+                        <div class="label">Service Method</div>\
+                        <div class="value">${data.shipping_method || "Standard"}</div>\
+                    </div>\
+                    <div class="info-box">\
+                        <div class="label">Weight</div>\
+                        <div class="value">${data.package ? data.package.weight : "N/A"} KGS</div>\
+                    </div>\
+                </div>\
+                <div class="section-title">Shipment Details</div>\
+                <table class="table">\
+                    <tr>\
+                        <th>Estimated Delivery</th>\
+                        <td>${data.estimated_delivery || "Pending"}</td>\
+                    </tr>\
+                    <tr>\
+                        <th>Shipping Fee</th>\
+                        <td>$${data.shipping_fee || "0.00"}</td>\
+                    </tr>\
+                </table>\
+                <div class="footer">\
+                    Thank you for using our services.<br>\
+                    This is an automatically generated receipt.\
+                </div>\
+                <script>\
+                    setTimeout(() => { window.print(); }, 500);\
+                </script>\
+            </body>\
+            </html>\
+        `;
+        receiptWindow.document.write(receiptHTML);
+        receiptWindow.document.close();
+    }
+
 
     function showSuccessView(identifier, isDraft = false) {
         const container = document.getElementById('success-tracking-number');
@@ -1706,6 +1813,7 @@
                 showDashboard();
             } else {
                 const newShipment = await window.db.createShipment(payload);
+                window.lastCreatedShipmentPayload = payload;
                 if (currentWorkflow === 'manual') {
                     await window.db.addTrackingEvents([{
                         shipment_id: newShipment.id,

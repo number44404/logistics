@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const proofBtn = document.getElementById("proof-btn");
     const proofContainer = document.getElementById("proof-container");
     const changeDeliveryBtn = document.getElementById("change-delivery-btn");
+    const downloadReceiptBtn = document.getElementById("download-receipt-btn");
     
     // Tabs
     const tabBtns = document.querySelectorAll(".tab-btn");
@@ -157,6 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderShipment(shipment) {
+        window.currentShipmentData = shipment;
         document.getElementById("res-tracking-number").textContent = shipment.trackingNumber;
         document.getElementById("res-delivery-text").textContent = shipment.estimatedDelivery;
         document.getElementById("res-destination").textContent = shipment.destination;
@@ -268,5 +270,115 @@ document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("proof-delivered-to").textContent = shipment.destination;
             document.getElementById("proof-timestamp").textContent = dateStr;
         }
+    }
+
+    if (downloadReceiptBtn) {
+        downloadReceiptBtn.addEventListener("click", () => {
+            if (!window.currentShipmentData) return;
+            const data = window.currentShipmentData;
+            
+            const receiptWindow = window.open("", "_blank");
+            if (!receiptWindow) {
+                alert("Please allow popups to download your receipt.");
+                return;
+            }
+            
+            const receiptHTML = `
+                <html>
+                <head>
+                    <title>Receipt - ${data.trackingNumber}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 40px; color: #333; max-width: 800px; margin: 0 auto; }
+                        .header { display: flex; justify-content: space-between; border-bottom: 2px solid #ffb500; padding-bottom: 20px; margin-bottom: 30px; }
+                        .header img { height: 60px; }
+                        .title { font-size: 24px; font-weight: bold; color: #333; }
+                        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+                        .info-box { background: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #e9ecef; }
+                        .label { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+                        .value { font-size: 16px; font-weight: bold; }
+                        .section-title { font-size: 18px; font-weight: bold; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+                        .table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                        .table th, .table td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+                        .table th { background-color: #f8f9fa; font-weight: bold; color: #555; }
+                        .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #888; border-top: 1px solid #ddd; padding-top: 20px; }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            button { display: none; }
+                        }
+                        .print-btn { background: #ffb500; color: #000; border: none; padding: 10px 20px; font-weight: bold; cursor: pointer; border-radius: 20px; float: right; }
+                        .clear { clear: both; }
+                    </style>
+                </head>
+                <body>
+                    <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+                    <div class="clear"></div>
+                    <div class="header">
+                        <div>
+                            <div class="title">Parcel Receipt</div>
+                            <div style="margin-top: 10px; color: #666;">Date: ${new Date().toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                            <!-- UPS Logo svg placeholder -->
+                            <svg viewBox="0 0 40 46" height="50" width="50" xmlns="http://www.w3.org/2000/svg">
+                                <path fill="#ffb500" d="M29.5 0h-19C4.7 0 0 4.7 0 10.5v25C0 41.3 4.7 46 10.5 46h19c5.8 0 10.5-4.7 10.5-10.5v-25C40 4.7 35.3 0 29.5 0z"/>
+                                <path fill="#3a2618" d="M30 6H10C7.8 6 6 7.8 6 10v26c0 2.2 1.8 4 4 4h20c2.2 0 4-1.8 4-4V10c0-2.2-1.8-4-4-4zm-2.8 28.5L20 30l-7.2 4.5v-18l7.2-4.5 7.2 4.5v18z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="info-grid">
+                        <div class="info-box">
+                            <div class="label">Tracking Number</div>
+                            <div class="value">${data.trackingNumber}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="label">Status</div>
+                            <div class="value">${data.status}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="label">From</div>
+                            <div class="value">${data.origin || 'N/A'}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="label">To</div>
+                            <div class="value">${data.destination || 'N/A'}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="label">Service</div>
+                            <div class="value">${data.service || 'Standard'}</div>
+                        </div>
+                        <div class="info-box">
+                            <div class="label">Weight</div>
+                            <div class="value">${data.weight || 'N/A'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="section-title">Shipment Details</div>
+                    <table class="table">
+                        <tr>
+                            <th>Estimated Delivery</th>
+                            <td>${data.estimatedDelivery || 'Pending'}</td>
+                        </tr>
+                        <tr>
+                            <th>Shipped On</th>
+                            <td>${data.shipped_on || 'Pending'}</td>
+                        </tr>
+                    </table>
+
+                    <div class="footer">
+                        Thank you for using our services.<br>
+                        This is an automatically generated receipt.
+                    </div>
+                    <script>
+                        // Auto-print on load
+                        setTimeout(() => { window.print(); }, 500);
+                    </script>
+                </body>
+                </html>
+            `;
+            
+            receiptWindow.document.write(receiptHTML);
+            receiptWindow.document.close();
+        });
     }
 });
