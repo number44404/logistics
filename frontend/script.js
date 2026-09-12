@@ -372,7 +372,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <script>
                         // Auto-print on load
                         setTimeout(() => { window.print(); }, 500);
-                    </script>
+                    <\/script>
                 </body>
                 </html>
             `;
