@@ -620,9 +620,7 @@
                             <button class="btn btn-outline-secondary btn-lg rounded-0 fw-bold px-4" onclick="copyTracking()">
                                 <span class="material-symbols-rounded align-middle me-1">content_copy</span> Copy Tracking Number
                             </button>
-                            <button class="btn btn-outline-ups btn-lg rounded-0 fw-bold px-4" onclick="downloadAdminReceipt()">
-                                <span class="material-symbols-rounded align-middle me-1">receipt</span> Download Receipt
-                            </button>
+                            
                             <button class="btn btn-outline-ups btn-lg rounded-0 fw-bold px-4" onclick="showDashboard()">
                                 <span class="material-symbols-rounded align-middle me-1">list_alt</span> View Shipments
                             </button>
@@ -791,19 +789,16 @@
             showToast("Failed to copy.");
         });
     }
-    function downloadAdminReceipt() {
-        if (!window.lastCreatedShipmentPayload) {
-            showToast("No shipment data found.");
-            return;
-        }
-        const data = window.lastCreatedShipmentPayload;
+    function downloadAdminReceiptFromDashboard(trackingNumber) {
+        const data = globalShipments.find(s => s.tracking_number === trackingNumber);
+        if (!data) return showToast("No shipment data found.");
+        
         const receiptWindow = window.open("", "_blank");
         if (!receiptWindow) {
             alert("Please allow popups to download your receipt.");
             return;
         }
-        const receiverStr = data.receiver ? `${data.receiver.full_name}<br>${data.receiver.address}<br>${data.receiver.city}, ${data.receiver.country}` : "Pending (Draft)";
-        const senderStr = data.sender ? `${data.sender.full_name}<br>${data.sender.address}<br>${data.sender.city}, ${data.sender.country}` : "N/A";
+        
         const receiptHTML = `
             <html>
             <head>
@@ -858,13 +853,13 @@
                     <div class="grid-2">
                         <div>
                             <div class="col-title">Ship From</div>
-                            <div class="info-text upper">${data.sender ? data.sender.full_name : 'N/A'}</div>
-                            <div class="info-text upper">${data.sender ? data.sender.address + '<br>' + data.sender.city + ', ' + data.sender.country : 'N/A'}</div>
+                            <div class="info-text upper">${data.senders ? data.senders.full_name : 'N/A'}</div>
+                            <div class="info-text upper">${data.senders ? data.senders.address + '<br>' + data.senders.city + ', ' + data.senders.country : 'N/A'}</div>
                         </div>
                         <div>
                             <div class="col-title">Ship To</div>
-                            <div class="info-text upper">${data.receiver ? data.receiver.full_name : 'PENDING (DRAFT)'}</div>
-                            <div class="info-text upper">${data.receiver ? data.receiver.address + '<br>' + data.receiver.city + ', ' + data.receiver.country : 'N/A'}</div>
+                            <div class="info-text upper">${data.receivers ? data.receivers.full_name : 'PENDING (DRAFT)'}</div>
+                            <div class="info-text upper">${data.receivers ? data.receivers.address + '<br>' + data.receivers.city + ', ' + data.receivers.country : 'N/A'}</div>
                         </div>
                     </div>
                 </div>
@@ -872,17 +867,17 @@
                 <div class="section">
                     <div class="section-title">What</div>
                     <div class="divider"></div>
-                    <div class="info-text">Total Shipment Weight: ${data.package && data.package.weight ? data.package.weight + ' KGS' : 'N/A'}</div>
+                    <div class="info-text">Total Shipment Weight: ${data.packages && data.packages.weight ? data.packages.weight + ' KGS' : 'N/A'}</div>
                     
                     <div class="parcel-title">Parcel 1 - ${data.tracking_number}</div>
                     <div class="grid-4">
                         <div>
                             <div class="grid-label">Weight</div>
-                            <div class="grid-val">${data.package && data.package.weight ? data.package.weight + ' KGS' : 'N/A'}</div>
+                            <div class="grid-val">${data.packages && data.packages.weight ? data.packages.weight + ' KGS' : 'N/A'}</div>
                         </div>
                         <div>
                             <div class="grid-label">Dimensions</div>
-                            <div class="grid-val">${data.package && data.package.length ? data.package.length + 'x' + data.package.width + 'x' + data.package.height + ' cm' : 'My Packaging'}</div>
+                            <div class="grid-val">${data.packages && data.packages.length ? data.packages.length + 'x' + data.packages.width + 'x' + data.packages.height + ' cm' : 'My Packaging'}</div>
                         </div>
                     </div>
                     
@@ -922,7 +917,7 @@
                 
                 <div class="legal-text">
                     Note This document is not an invoice.<br><br>
-                    All shipments are subject to the UPS Terms and Conditions of Service for the country of origin in effect at the time of shipping which can be found at www.ups.com ('UPS Terms'). Unless governed by the Convention for the Unification of Certain Rules Relating to International Transportation by Air signed at Warsaw, Poland, on 12 October 1929, and any amendments thereto ('Warsaw Convention'), the Convention on the Contract for the International Carriage of Goods by Road ('CMR Convention'), or other mandatory law, UPS's liability for damage or loss of this shipment is limited to a maximum of US$100 (or local currency equivalent) per shipment or as otherwise limited by the UPS Terms. No protection for loss or damage of this shipment in excess of the amount pursuant to the previous sentence is provided unless the shipper declares a higher value for carriage and pays an additional charge. If the shipper declares a higher value for carriage and pays the additional applicable charge, then UPS's liability shall be limited to proven damages of not more than the sum so declared. Claims not made within the time limits set forth in the applicable UPS Terms shall be deemed waived. UPS shall not be liable for any special, incidental, or consequential damages.
+                    All shipments are subject to the UPS Terms and Conditions of Service for the country of origin in effect at the time of shipping which can be found at www.ups.com ('UPS Terms').
                 </div>
                 
                 <script>setTimeout(() => { window.print(); }, 500);<\/script>

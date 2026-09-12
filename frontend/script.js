@@ -116,6 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             origin: `${shipment.senders?.city || ''}, ${shipment.senders?.country || ''}`,
                             destination: `${shipment.receivers?.city || ''}, ${shipment.receivers?.country || ''}`,
                             status: shipment.status,
+                            payment_status: shipment.payment_status,
                             estimatedDelivery: shipment.estimated_delivery,
                             service: shipment.shipping_method || 'Standard',
                             weight: shipment.packages?.weight ? `${shipment.packages.weight} lbs` : '',
@@ -159,6 +160,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function renderShipment(shipment) {
         window.currentShipmentData = shipment;
+        
+        const downloadReceiptBtn = document.getElementById("download-receipt-btn");
+        if (downloadReceiptBtn) {
+            if (shipment.payment_status === 'paid') {
+                downloadReceiptBtn.style.display = 'inline-block';
+            } else {
+                downloadReceiptBtn.style.display = 'none';
+            }
+        }
         document.getElementById("res-tracking-number").textContent = shipment.trackingNumber;
         document.getElementById("res-delivery-text").textContent = shipment.estimatedDelivery;
         document.getElementById("res-destination").textContent = shipment.destination;
