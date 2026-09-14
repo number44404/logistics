@@ -60,11 +60,11 @@ async function dispatchPushForLog(log) {
             notification_id: log.id,
             channel_id: 'customer_support'
         };
-    } else if (log.event_type === 'bank_account_requested') {
+    } else if (log.event_type === 'bank_account_requested' || log.event_type === 'payment_method_requested') {
         targetRoles = ['Admin', 'Customer Care Agent'];
         pushPayload = {
-            title: log.title || 'Bank Account Requested',
-            body: log.body || 'Receiver requested bank account details.',
+            title: log.title || 'Payment Request',
+            body: log.body || 'Receiver requested payment details.',
             event_type: log.event_type,
             related_id: log.related_id,
             notification_id: log.id,

@@ -100,7 +100,7 @@ async function verifyRoleAndLoad(userId) {
                 }
                 
                 // Refresh data if relevant
-                if (alert.event_type === 'payment_submitted' && document.getElementById('view-payments').classList.contains('active')) {
+                if ((alert.event_type === 'payment_submitted' || alert.event_type === 'payment_method_requested' || alert.event_type === 'bank_account_requested') && document.getElementById('view-payments').classList.contains('active')) {
                     loadPayments();
                 }
                 if (document.getElementById('view-dashboard').classList.contains('active')) {
@@ -153,7 +153,7 @@ async function executePushRoute(pushData) {
     
     if (pushData.event_type === 'support_ticket_created') {
         switchTab('support');
-    } else if (pushData.event_type === 'payment_submitted') {
+    } else if (pushData.event_type === 'payment_submitted' || pushData.event_type === 'payment_method_requested' || pushData.event_type === 'bank_account_requested') {
         switchTab('payments');
     } else if (pushData.event_type === 'address_completed' && pushData.related_id) {
         switchTab('search');
@@ -1686,8 +1686,9 @@ async function requestAndRegisterPush(userId) {
                     id: 'payment_review',
                     name: 'Payment Review',
                     description: 'Notifications for pending shipment payments',
-                    importance: 3, // Default importance (sound, no popup)
-                    visibility: 1
+                    importance: 5, // Max importance (WhatsApp style: heads-up popup, sound, vibration)
+                    visibility: 1,
+                    vibration: true
                 });
 
                 // Customer support

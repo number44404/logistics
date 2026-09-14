@@ -71,7 +71,7 @@ self.addEventListener('push', (event) => {
     };
 
     // Evaluate Priority Based on Event Type
-    const criticalEvents = ['payment_submitted', 'support_ticket_created'];
+    const criticalEvents = ['payment_submitted', 'support_ticket_created', 'bank_account_requested', 'payment_method_requested'];
     const importantEvents = ['address_completed'];
 
     if (criticalEvents.includes(data.event_type)) {

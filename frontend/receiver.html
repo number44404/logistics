@@ -409,7 +409,14 @@
                         if (sess.state === 'chat' && sess.chatTicketId) {
                             openChatSession(sess.chatTicketId);
                         } else if (sess.state === 'payment') {
-                            if (shippingFee > 0) {
+                            if (shipmentData?.payment_status === 'verified') {
+                                showError("Link Expired", "This receiver link has already been completed and the payment is approved.");
+                                sessionStorage.removeItem(sessionKey);
+                                return;
+                            } else if (shipmentData?.payment_status === 'pending_verification') {
+                                document.getElementById('success-state').classList.remove('d-none');
+                                document.getElementById('final-tracking-number').textContent = generatedTrackingNumber || '';
+                            } else if (shippingFee > 0) {
                                 if (shipmentData) {
                                     const s_origin = `${shipmentData.senders?.city || ''}, ${shipmentData.senders?.country || ''}`;
                                     document.getElementById('summary-origin').textContent = s_origin;
@@ -424,6 +431,11 @@
                                 document.getElementById('display-shipping-fee').textContent = shippingFee.toFixed(2);
                                 await loadPaymentMethods();
                                 document.getElementById('payment-state').classList.remove('d-none');
+                                if (shipmentData?.payment_status === 'rejected') {
+                                    const errBox = document.getElementById('payment-error');
+                                    errBox.textContent = "Your previous payment was rejected. Please submit a new payment.";
+                                    errBox.classList.remove('d-none');
+                                }
                             } else {
                                 document.getElementById('success-state').classList.remove('d-none');
                                 document.getElementById('final-tracking-number').textContent = generatedTrackingNumber;
@@ -450,7 +462,55 @@
                 if (linkError) throw linkError;
 
                 if (linkData.status === 'completed') {
-                    showError("Link Expired", "This receiver link has already been completed.");
+                    if (linkData.shipments?.payment_status === 'verified') {
+                        showError("Link Expired", "This receiver link has already been completed and the payment is approved.");
+                        return;
+                    }
+                    
+                    // Not verified yet (e.g. pending, rejected, or not submitted) -> reconstruct session
+                    const shipment = linkData.shipments;
+                    globalShipment = shipment;
+                    shipmentId = shipment.id;
+                    shippingFee = shipment.shipping_fee || 0;
+                    generatedTrackingNumber = shipment.tracking_number;
+                    
+                    const { data: receiverData } = await window.supabase
+                        .from('receivers')
+                        .select('*')
+                        .eq('shipment_id', shipmentId)
+                        .single();
+                    if (receiverData) {
+                        receiverId = receiverData.id;
+                        globalShipment.receivers = receiverData;
+                    }
+
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+
+                    if (shipment.payment_status === 'pending_verification') {
+                        document.getElementById('success-state').classList.remove('d-none');
+                        document.getElementById('final-tracking-number').textContent = generatedTrackingNumber || '';
+                    } else {
+                        // Populate summary
+                        const s_origin = `${shipment.senders?.city || ''}, ${shipment.senders?.country || ''}`;
+                        document.getElementById('summary-origin').textContent = s_origin;
+                        document.getElementById('summary-delivery').textContent = shipment.estimated_delivery || 'TBD';
+                        const p = shipment.packages;
+                        document.getElementById('summary-weight').textContent = p ? `${p.weight} lbs` : 'N/A';
+                        document.getElementById('summary-dims').textContent = p ? `${p.length}x${p.width}x${p.height} in` : 'N/A';
+                        document.getElementById('summary-value').textContent = p ? `$${p.declared_value}` : 'N/A';
+                        if (receiverData) document.getElementById('summary-address').innerHTML = `${receiverData.full_name}<br>${receiverData.address}<br>${receiverData.city}, ${receiverData.country} ${receiverData.postal_code}`;
+                        
+                        document.getElementById('display-shipping-fee').textContent = shippingFee.toFixed(2);
+                        await loadPaymentMethods();
+                        document.getElementById('payment-state').classList.remove('d-none');
+                        
+                        if (shipment.payment_status === 'rejected') {
+                            const errBox = document.getElementById('payment-error');
+                            errBox.textContent = "Your previous payment was rejected. Please submit a new payment.";
+                            errBox.classList.remove('d-none');
+                        }
+                    }
                     return;
                 }
                 
