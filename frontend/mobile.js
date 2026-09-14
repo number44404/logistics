@@ -1142,9 +1142,21 @@ function createTicketCard(t, isUnread) {
 }
 
 let activeMobileTicketId = null;
+let mobileChatChannel = null;   // Realtime channel for the open mobile chat
+let mobileChatPolling = null;   // Polling fallback
 
 function closeChat() {
     document.getElementById('view-chat').style.display = 'none';
+
+    // Clean up realtime + polling when chat is closed
+    if (mobileChatChannel) {
+        window.supabase.removeChannel(mobileChatChannel);
+        mobileChatChannel = null;
+    }
+    if (mobileChatPolling) {
+        clearInterval(mobileChatPolling);
+        mobileChatPolling = null;
+    }
 }
 
 async function openMobileChat(t) {
@@ -1167,9 +1179,41 @@ async function openMobileChat(t) {
     } else {
         infoBtn.style.display = 'none';
     }
+
+    // Tear down previous subscriptions if switching tickets
+    if (mobileChatChannel) {
+        window.supabase.removeChannel(mobileChatChannel);
+        mobileChatChannel = null;
+    }
+    if (mobileChatPolling) {
+        clearInterval(mobileChatPolling);
+        mobileChatPolling = null;
+    }
+
+    const ticketId = t.id;
+
+    // Real-time: update chat as soon as a new reply arrives
+    mobileChatChannel = window.supabase
+        .channel('mobile-chat-replies-' + ticketId)
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'ticket_replies' },
+            (payload) => {
+                if (payload.new && payload.new.ticket_id === ticketId) {
+                    loadMobileChatMessages();
+                }
+            }
+        )
+        .subscribe();
+
+    // Polling fallback every 4 s in case realtime is unavailable
+    mobileChatPolling = setInterval(() => {
+        if (activeMobileTicketId === ticketId) loadMobileChatMessages();
+    }, 4000);
     
     await loadMobileChatMessages();
 }
+
 
 async function updateMobileTicketStatus(newStatus) {
     if (!activeMobileTicketId) return;

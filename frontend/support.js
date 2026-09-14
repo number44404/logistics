@@ -117,6 +117,10 @@ async function verifyRoleAndLoad(userId) {
                 if (alert.event_type === 'support_ticket_created') {
                     loadQueue();
                     fireNotification('New Support Ticket', alert.body || 'A customer opened a new ticket.');
+                } else if (alert.event_type === 'customer_chat_message') {
+                    // Follow-up message in an existing ticket
+                    loadQueue();
+                    fireNotification(alert.title || '💬 New Customer Message', alert.body || 'A customer sent a message.');
                 }
             }
         )

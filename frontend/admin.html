@@ -263,6 +263,13 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-4">
+                            <!-- Receiver context — populated by openAssignAccountModal() -->
+                            <div id="assign-modal-receiver-info" class="alert alert-warning rounded-0 mb-3 d-none small">
+                                <strong>⚠ Assigning for:</strong><br>
+                                <span id="assign-modal-receiver-name" class="fw-bold"></span><br>
+                                <span id="assign-modal-receiver-email" class="text-muted"></span><br>
+                                Tracking: <span id="assign-modal-tracking" class="fw-bold"></span>
+                            </div>
                             <div class="alert alert-danger d-none rounded-0" id="assign-modal-error"></div>
                             <form id="assign-account-form" onsubmit="submitAccountAssignment(event)">
                                 <input type="hidden" id="assign-request-id">
@@ -280,6 +287,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- ASSIGN PAYMENT METHOD MODAL -->
             <div class="modal fade" id="assignPaymentMethodModal" tabindex="-1" aria-hidden="true">
@@ -1154,6 +1162,10 @@
         });
     }
 
+    // Track realtime and polling for the currently open admin ticket thread modal
+    let adminThreadChannel = null;
+    let adminThreadPolling = null;
+
     async function openTicketThread(ticketId) {
         const ticket = globalSupportTickets.find(t => t.id === ticketId);
         if (!ticket) return;
@@ -1168,6 +1180,55 @@
         
         const modal = new bootstrap.Modal(document.getElementById('ticketThreadModal'));
         modal.show();
+
+        // Tear down any previous subscription/polling from a prior open thread
+        if (adminThreadChannel) {
+            window.supabase.removeChannel(adminThreadChannel);
+            adminThreadChannel = null;
+        }
+        if (adminThreadPolling) {
+            clearInterval(adminThreadPolling);
+            adminThreadPolling = null;
+        }
+
+        // Real-time: refresh thread as soon as a new reply arrives
+        adminThreadChannel = window.supabase
+            .channel('admin-thread-replies-' + ticketId)
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'ticket_replies' },
+                (payload) => {
+                    if (payload.new && payload.new.ticket_id === ticketId) {
+                        loadAdminThreadMessages(ticketId);
+                    }
+                }
+            )
+            .subscribe();
+
+        // Polling fallback (every 4 s) in case realtime is unavailable
+        adminThreadPolling = setInterval(() => {
+            loadAdminThreadMessages(ticketId);
+        }, 4000);
+
+        // Clean up when the modal is closed
+        document.getElementById('ticketThreadModal').addEventListener('hidden.bs.modal', () => {
+            if (adminThreadChannel) {
+                window.supabase.removeChannel(adminThreadChannel);
+                adminThreadChannel = null;
+            }
+            if (adminThreadPolling) {
+                clearInterval(adminThreadPolling);
+                adminThreadPolling = null;
+            }
+        }, { once: true });
+
+        await loadAdminThreadMessages(ticketId);
+    }
+
+    async function loadAdminThreadMessages(ticketId) {
+        const ticket = globalSupportTickets.find(t => t.id === ticketId);
+        const messagesContainer = document.getElementById('thread-messages');
+        if (!messagesContainer) return;
 
         try {
             const { data: replies, error } = await window.supabase
@@ -1192,7 +1253,7 @@
                 
                 const bubbleClass = isInternal ? 'bg-warning bg-opacity-25 border-warning' : (isAdmin ? 'bg-white border' : 'bg-ups-yellow border-ups-yellow');
                 const alignClass = isAdmin ? 'ms-auto' : 'me-auto';
-                const senderName = isInternal ? 'Internal Note (Hidden from customer)' : (isAdmin ? 'Support Agent' : ticket.sender_name);
+                const senderName = isInternal ? 'Internal Note (Hidden from customer)' : (isAdmin ? 'Support Agent' : (ticket?.sender_name || 'Customer'));
                 
                 const div = document.createElement('div');
                 div.className = `card mb-3 border rounded-3 w-75 ${alignClass} ${bubbleClass}`;
@@ -1223,6 +1284,7 @@
         }
     }
 
+
     async function addTicketReply(e) {
         e.preventDefault();
         const btn = document.getElementById('reply-btn');
@@ -1246,8 +1308,8 @@
             if (error) throw error;
             
             input.value = '';
-            // Refresh thread
-            openTicketThread(ticketId);
+            // Refresh thread messages only (realtime subscription stays active)
+            await loadAdminThreadMessages(ticketId);
         } catch (err) {
             showToast("Error sending reply: " + err.message);
         } finally {
@@ -2173,6 +2235,18 @@
         select.innerHTML = '<option value="">Loading accounts...</option>';
         document.getElementById('assign-modal-error').classList.add('d-none');
         document.getElementById('assign-save-btn').disabled = true;
+
+        // Populate receiver context so admin knows exactly which request they're assigning
+        const request = (globalPayments || []).find(p => p.id === requestId && p.is_bank_request);
+        const infoBox = document.getElementById('assign-modal-receiver-info');
+        if (request && infoBox) {
+            document.getElementById('assign-modal-receiver-name').textContent = request.receivers?.full_name || 'Unknown Receiver';
+            document.getElementById('assign-modal-receiver-email').textContent = request.receivers?.email || '';
+            document.getElementById('assign-modal-tracking').textContent = request.shipments?.tracking_number || 'N/A';
+            infoBox.classList.remove('d-none');
+        } else if (infoBox) {
+            infoBox.classList.add('d-none');
+        }
         
         const modalEl = document.getElementById('assignBankAccountModal');
         let modal = bootstrap.Modal.getInstance(modalEl);
@@ -2251,6 +2325,14 @@
                 .eq('id', requestId);
 
             if (error) throw error;
+
+            // Send WhatsApp-style notification to receiver (same pattern as PayPal/CashApp)
+            await window.supabase.from('notifications_log').insert([{
+                title: 'Bank Account Assigned',
+                body: 'Your bank transfer account details have been assigned. Please check the payment section to view the details.',
+                event_type: 'bank_account_assigned',
+                related_id: requestId
+            }]).catch(() => {}); // non-blocking
 
             showToast('Bank account successfully assigned to the request.');
             const modalEl = document.getElementById('assignBankAccountModal');

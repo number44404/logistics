@@ -950,6 +950,14 @@
 
                     if (error) throw error;
 
+                    // Notify customer care staff of every new customer message (WhatsApp-style)
+                    await window.supabase.from('notifications_log').insert([{
+                        title: '💬 New Customer Message',
+                        body: msg.replace(/\[ATTACHMENT\]\(.*?\)/g, '📎 Image').substring(0, 120),
+                        event_type: 'customer_chat_message',
+                        related_id: chatTicketId
+                    }]).catch(() => {}); // non-blocking: don't fail the send if notification fails
+
                     input.value = '';
                     clearChatImage();
                     await loadChatMessages(); // Show the message immediately without waiting for realtime
@@ -1176,6 +1184,20 @@
                 if (cashappTabId) {
                     const tabBtn = document.getElementById(cashappTabId);
                     tabBtn.addEventListener('shown.bs.tab', () => requestPaymentMethodAssignment('cashapp'));
+                }
+
+                // FIX: Bootstrap does NOT fire shown.bs.tab for the initially active tab.
+                // Check which tab is active right now and trigger its load function immediately.
+                const activeTabBtn = tabsContainer.querySelector('.nav-link.active');
+                if (activeTabBtn) {
+                    const activeId = activeTabBtn.id;
+                    if (activeId === bankTabId) {
+                        requestBankAccount();
+                    } else if (activeId === paypalTabId) {
+                        requestPaymentMethodAssignment('paypal');
+                    } else if (activeId === cashappTabId) {
+                        requestPaymentMethodAssignment('cashapp');
+                    }
                 }
             } catch (err) {
                 console.error("Error loading payment methods:", err);
