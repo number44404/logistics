@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ups-staff-mobile-v1';
+const CACHE_NAME = 'ups-staff-mobile-v2';
 const ASSETS = [
     './mobile.html',
     './mobile.js',
