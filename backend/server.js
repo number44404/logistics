@@ -315,11 +315,29 @@ app.post('/api/create-payment-method-request', async (req, res) => {
         }
         if (Array.isArray(insertRes.data)) data = insertRes.data[0];
         else data = insertRes.data;
-        // Optionally log notification
+
+        // Fetch shipment details for a readable notification
+        let trackingNumber = shipment_id;
+        let amount = '';
+        try {
+            const { data: shipment } = await supabase
+                .from('shipments')
+                .select('tracking_number, shipping_fee')
+                .eq('id', shipment_id)
+                .single();
+            if (shipment) {
+                trackingNumber = shipment.tracking_number || shipment_id;
+                amount = shipment.shipping_fee ? `. Amount: $${Number(shipment.shipping_fee).toFixed(2)}` : '';
+            }
+        } catch (e) { /* non-fatal */ }
+
+        const methodLabel = method_type === 'paypal' ? 'PayPal' : 'Cash App';
+
+        // Log notification so admin toast fires and payments view auto-refreshes
         try {
             await supabase.from('notifications_log').insert([{
-                title: `${method_type === 'paypal' ? 'PayPal' : 'Cash App'} Details Requested`,
-                body: `Receiver requested ${method_type} account details for shipment ${shipment_id}.`,
+                title: `${methodLabel} Payment Requested`,
+                body: `Receiver selected ${methodLabel} for shipment ${trackingNumber}${amount}. Please assign the ${methodLabel} details.`,
                 event_type: 'payment_method_requested',
                 related_id: shipment_id,
                 created_at: new Date().toISOString()

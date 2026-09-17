@@ -10,12 +10,12 @@
     <!-- Material Symbols matching frontend -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     
-    <link rel="stylesheet" href="admin.css">
+    <link rel="stylesheet" href="/admin.css">
     
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="supabase-config.js"></script>
-    <script src="db-helpers.js"></script>
+    <script src="/supabase-config.js"></script>
+    <script src="/db-helpers.js"></script>
 </head>
 <body>
 
@@ -301,12 +301,20 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-4">
+                            <!-- Receiver context — populated by openAssignPaymentMethodModal() -->
+                            <div id="assign-payment-method-receiver-info" class="alert alert-warning rounded-0 d-none mb-3">
+                                <strong>⚠ Assigning for:</strong>
+                                <span id="assign-payment-method-receiver-name" class="fw-bold ms-1"></span>
+                                <span id="assign-payment-method-receiver-email" class="text-muted ms-1 small"></span><br>
+                                Tracking: <span id="assign-payment-method-tracking" class="fw-bold"></span>
+                                <span id="assign-payment-method-amount" class="float-end fw-bold"></span>
+                            </div>
                             <div class="alert alert-danger d-none rounded-0" id="assign-payment-method-error"></div>
                             <form id="assign-payment-method-form" onsubmit="submitPaymentMethodAssignment(event)">
                                 <input type="hidden" id="assign-payment-method-request-id">
                                 <input type="hidden" id="assign-payment-method-type">
                                 <div class="mb-4">
-                                    <label class="fw-bold mb-1 small text-uppercase">Assigned Value <span class="text-danger">*</span></label>
+                                    <label class="fw-bold mb-1 small text-uppercase" id="assign-payment-method-label">Assigned Value <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control rounded-0" id="assign-payment-method-value" required placeholder="e.g. paypal.me/username or $cashapphandle">
                                     <div class="small text-muted mt-2">This value will be sent directly to the receiver so they know where to send payment.</div>
                                 </div>
@@ -316,6 +324,7 @@
                     </div>
                 </div>
             </div>
+
 
             <!-- SUPPORT VIEW -->
             <div id="support-view" class="view">
@@ -754,7 +763,7 @@
                     showToast(`<strong>${alert.title}</strong><br><span style="font-size:0.85em">${alert.body}</span>`);
                     
                     // Auto-refresh views if applicable
-                    if ((alert.event_type === 'payment_submitted' || alert.event_type === 'bank_account_requested') && document.getElementById('payments-view').classList.contains('active')) {
+                    if ((alert.event_type === 'payment_submitted' || alert.event_type === 'bank_account_requested' || alert.event_type === 'payment_method_requested') && document.getElementById('payments-view').classList.contains('active')) {
                         showPaymentsView();
                     }
                     if (document.getElementById('dashboard-view').classList.contains('active')) {
@@ -2285,9 +2294,27 @@
         document.getElementById('assign-payment-method-value').value = '';
         document.getElementById('assign-payment-method-error').classList.add('d-none');
         document.getElementById('assign-payment-method-save-btn').disabled = false;
-        const label = methodType === 'paypal' ? 'PayPal handle/email' : 'Cash App handle';
-        document.getElementById('assign-payment-method-value').placeholder = `e.g. ${methodType === 'paypal' ? 'paypal.me/username or username@example.com' : '$cashappname or @username'}`;
+
+        const isPaypal = methodType === 'paypal';
+        const label = isPaypal ? 'PayPal Email / Link' : 'Cash App Handle';
+        document.getElementById('assign-payment-method-label').innerHTML = `${label} <span class="text-danger">*</span>`;
+        document.getElementById('assign-payment-method-value').placeholder = isPaypal
+            ? 'e.g. paypal.me/username or username@example.com'
+            : 'e.g. $cashappname or @username';
         document.getElementById('assign-payment-method-value').setAttribute('aria-label', label);
+
+        // Populate receiver context so staff knows exactly who they are assigning for
+        const request = (globalPayments || []).find(p => p.id === requestId && p.is_payment_method_request);
+        const infoBox = document.getElementById('assign-payment-method-receiver-info');
+        if (request && infoBox) {
+            document.getElementById('assign-payment-method-receiver-name').textContent = request.receivers?.full_name || 'Unknown Receiver';
+            document.getElementById('assign-payment-method-receiver-email').textContent = request.receivers?.email || '';
+            document.getElementById('assign-payment-method-tracking').textContent = request.shipments?.tracking_number || 'N/A';
+            document.getElementById('assign-payment-method-amount').textContent = request.amount ? `$${Number(request.amount).toFixed(2)}` : '';
+            infoBox.classList.remove('d-none');
+        } else if (infoBox) {
+            infoBox.classList.add('d-none');
+        }
 
         const modalEl = document.getElementById('assignPaymentMethodModal');
         let modal = bootstrap.Modal.getInstance(modalEl);

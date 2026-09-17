@@ -8,6 +8,14 @@
   ],
   "routes": [
     {
+      "src": "/(api/.*)",
+      "dest": "/backend/server.js"
+    },
+    {
+      "src": "/([^/]+\\.(?:css|js|json|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/frontend/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "/backend/server.js"
     }
