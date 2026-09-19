@@ -307,7 +307,7 @@ app.post('/api/create-payment-method-request', async (req, res) => {
         };
 
         // Call insert() and normalize results for both real client and TEST_MODE mock
-        const insertRes = await supabase.from('payment_method_requests').insert([payload]);
+        const insertRes = await supabase.from('payment_method_requests').insert([payload]).select();
         let data = null;
         if (insertRes.error) {
             console.error('Create payment method request error:', insertRes.error);
