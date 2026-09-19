@@ -477,7 +477,7 @@
                     const { data: receiverData } = await window.supabase
                         .from('receivers')
                         .select('*')
-                        .eq('shipment_id', shipmentId)
+                        .eq('id', shipment.receiver_id)
                         .single();
                     if (receiverData) {
                         receiverId = receiverData.id;
